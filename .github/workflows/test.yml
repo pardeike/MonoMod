@@ -21,6 +21,7 @@ jobs:
   test:  
     name: Test
     runs-on: ${{ fromJSON(inputs.matrix).os.runner }}
+    container: ${{ fromJSON(inputs.matrix).os.container }}
     env:
       LOG_FILE_NAME: testresults.${{ fromJSON(inputs.matrix).os.runner }}.${{ fromJSON(inputs.matrix).dotnet.id != '' && fromJSON(inputs.matrix).dotnet.id || fromJSON(inputs.matrix).dotnet.sdk }}.${{ fromJSON(inputs.matrix).arch }}
 

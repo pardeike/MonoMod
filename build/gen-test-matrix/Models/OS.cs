@@ -6,6 +6,7 @@ internal sealed record OS : Enableable
 {
     public required string Name { get; init; }
     public required string Runner { get; init; }
+    public string? Container { get; init; } // should properly be UseContainer, then we gen container name from rid + dockerfile hash
 
     [JsonIgnore]
     public bool HasFramework { get; init; }
