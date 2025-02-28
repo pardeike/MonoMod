@@ -43,7 +43,7 @@ jobs:
           docker manifest inspect $imgName | out-null;
           if ($?) { continue; }
           # Upstream doesn't exist yet, build
-          docker buildx build -t $imgName -f $($f.Name) $($f.Directory.FullName)
+          docker buildx build -t $imgName -f $($f.FullName) $($f.Directory.FullName)
           if (!$?) { exit 1; }
           # and push
           docker push --compress $imgName
