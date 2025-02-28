@@ -40,7 +40,7 @@ jobs:
         {
           $name = [System.IO.Path]::GetFileNameWithoutExtension($f.Name);
           $hash = (Get-FileHash -Algorithm SHA256 $f).Hash;
-          $imgName = "$ghcrBase:$name-$hash";
+          $imgName = "$($ghcrBase):$name-$hash";
           # Only rebuild if the container doesn't exist upstream already
           docker manifest inspect $imgName | out-null;
           if ($?) { continue; }
