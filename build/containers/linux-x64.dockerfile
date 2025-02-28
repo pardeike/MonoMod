@@ -17,6 +17,10 @@ RUN apt-get update \
         nodejs \
         dotnet-runtime-9.0 \
         powershell \
+# Dependencies for older runtimes
+ && wget -O libssl1.1.deb http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb \
+ && dpkg -i libssl1.1.deb \
+ && rm libssl1.1.deb \
  && apt-get remove -y apt-transport-https software-properties-common \
  && apt-get autoremove -y \
  && apt-get clean \
@@ -26,3 +30,6 @@ RUN apt-get update \
 RUN useradd -rm -d /home/runner -s /bin/bash -g root -G sudo -u 1001 runner
 USER runner
 WORKDIR /home/runner
+
+# Older runtimes can't find a valid libicu, and we don't particularly care about globalization anyway
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
