@@ -107,7 +107,45 @@ jobs:
       version: ${{ needs.setup.outputs.ver }}
       upload-packages: false
       upload-tests: false
-      
+
+  wait-for-containers:
+    needs: setup
+    if: needs.setup.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for container builds
+      shell: pwsh
+      run: |
+        $workflow = gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" `
+                     "/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}" `
+                     | ConvertFrom-Json `
+                     | % { $_.workflow_runs } `
+                     | Where { $_.path -eq ".github/workflows/containers.yml" }
+                     | Select -Property id
+        if ($null -eq $workflow) { echo "No containers workflow run found."; exit 0; } # containers didn't need to be built, exit normally
+        # we ARE waiting for container build, poll every 30s
+        while ($true)
+        {
+          $conclusion = gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" `
+            "/repos/${{ github.repository }}/actions/runs/$($workflow.id)" `
+            | ConvertFrom-Json `
+            | % { $_.conclusion }
+          if ($null -ne $conclusion)
+          {
+            if ($conclusion -ne "success")
+            {
+              echo "Container build had conclusion '$conclusion'. Failing.";
+              exit 1;
+            }
+            else
+            {
+              echo "Container build succeeded. Continuing."
+              exit 0;
+            }
+          }
+          Sleep -Seconds 30;
+        }
+
   test:
     needs: [setup, build-testassets]
     if: needs.setup.outputs.should_skip != 'true'
