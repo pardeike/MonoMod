@@ -1,12 +1,26 @@
 ﻿using GenTestMatrix;
 using GenTestMatrix.Models;
 
-if (args is not [{ } githubOutputFile, ..var matrixOutNames] || matrixOutNames.Length < 1)
+if (args is not [{ } owner, { } githubOutputFile, ..var matrixOutNames] || matrixOutNames.Length < 1)
 {
-    await StdErr.WriteLineAsync("Takes 2+ arguments: GITHUB_OUTPUT, matrix output names");
+    await StdErr.WriteLineAsync("Takes 3+ arguments: ${{ github.repository_owner }}, GITHUB_OUTPUT, matrix output names");
     return 1;
 }
 
+// get container dockerfile hashes
+using var hasher = System.Security.Cryptography.SHA256.Create();
+var containers = new Dictionary<string, string>();
+foreach (var dockerfile in Directory.EnumerateFiles("./build/containers", "*.dockerfile", SearchOption.TopDirectoryOnly))
+{
+    var name = Path.GetFileNameWithoutExtension(dockerfile);
+    using var fs = File.OpenRead(dockerfile);
+    var hash = Convert.ToHexString(await hasher.ComputeHashAsync(fs));
+    containers.Add(name, $"{name}-{hash}");
+}
+
+var containerNameBase = $"ghcr.io/{owner}/monomod-tester:";
+
+// build jobs
 await using var jobs = new JobsWriter(File.Open(githubOutputFile, FileMode.Append, FileAccess.Write), matrixOutNames);
 
 foreach (var os in OS.OperatingSystems)
@@ -16,11 +30,13 @@ foreach (var os in OS.OperatingSystems)
     if (os.HasSystemMono && os.Arch.Any(a => a.IsRunnerArch && a.Enabled))
     {
         // this OS has a system Mono, emit a job for that
+        var rid = os.Arch.First(a => a.IsRunnerArch).RidName;
+        var container = os.UseContainer && containers.TryGetValue($"{os.RidName}-{rid}", out var ctag) ? containerNameBase + ctag : null;
         await jobs.AddJob(new()
         {
             Title = $"System Mono on {os.Name}",
             OS = os,
-            Arch = os.Arch.First(a => a.IsRunnerArch).RidName,
+            Arch = rid,
             Dotnet = new()
             {
                 Name = "Mono",
@@ -29,7 +45,8 @@ foreach (var os in OS.OperatingSystems)
                 IsMono = true,
                 IsSystemMono = true,
                 TFM = Constants.Mono.NonCoreTFM,
-            }
+            },
+            Container = container,
         });
     }
 
@@ -37,6 +54,7 @@ foreach (var os in OS.OperatingSystems)
     {
         if (!arch.Enabled) continue;
         var rid = $"{os.RidName}-{arch.RidName}";
+        var container = os.UseContainer && containers.TryGetValue(rid, out var ctag) ? containerNameBase + ctag : null;
 
         foreach (var dotnet in Dotnet.Versions)
         {
@@ -59,6 +77,7 @@ foreach (var os in OS.OperatingSystems)
                     OS = os,
                     Dotnet = jobDotnet,
                     Arch = arch.RidName,
+                    Container = container,
                     UsePGO = false,
                 });
                 await jobs.AddJob(new()
@@ -67,6 +86,7 @@ foreach (var os in OS.OperatingSystems)
                     OS = os,
                     Dotnet = jobDotnet,
                     Arch = arch.RidName,
+                    Container = container,
                     UsePGO = true,
                 });
             }
@@ -79,6 +99,7 @@ foreach (var os in OS.OperatingSystems)
                     OS = os,
                     Dotnet = dotnet,
                     Arch = arch.RidName,
+                    Container = container,
                 });
             }
 
@@ -116,6 +137,7 @@ foreach (var os in OS.OperatingSystems)
                     OS = os,
                     Arch = arch.RidName,
                     Dotnet = monoDotnet,
+                    Container = container,
                 });
             }
         }

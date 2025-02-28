@@ -21,6 +21,7 @@ jobs:
   test:  
     name: Test
     runs-on: ${{ fromJSON(inputs.matrix).os.runner }}
+    container: ${{ fromJSON(inputs.matrix).container }}
     env:
       LOG_FILE_NAME: testresults.${{ fromJSON(inputs.matrix).os.runner }}.${{ fromJSON(inputs.matrix).dotnet.id != '' && fromJSON(inputs.matrix).dotnet.id || fromJSON(inputs.matrix).dotnet.sdk }}.${{ fromJSON(inputs.matrix).arch }}
 
@@ -35,7 +36,7 @@ jobs:
     # Note: All of the SDKs we install have to be for the target architecture. Otherwise, we get issues when the default != the target.
     - name: Install global SDK
       if: ${{ ! fromJSON(inputs.matrix).dotnet.needsRestore }}
-      uses: nike4613/install-dotnet@54b402247e474b39b84891b9093d8025892c8b47
+      uses: nike4613/install-dotnet@533307d1c90c37993c8ef1397388bc9783e7b87c
       with:
         architecture: ${{ fromJSON(inputs.matrix).arch }}
         version: "9.0"
@@ -50,7 +51,7 @@ jobs:
 
     - name: Install restore SDK
       if: ${{ fromJSON(inputs.matrix).dotnet.needsRestore }}
-      uses: nike4613/install-dotnet@54b402247e474b39b84891b9093d8025892c8b47
+      uses: nike4613/install-dotnet@533307d1c90c37993c8ef1397388bc9783e7b87c
       with:
         architecture: ${{ fromJSON(inputs.matrix).arch }}
         global-json: global.json
@@ -66,7 +67,7 @@ jobs:
         
     - name: Install test target runtime
       if: ${{ fromJSON(inputs.matrix).dotnet.sdk != '' }}
-      uses: nike4613/install-dotnet@54b402247e474b39b84891b9093d8025892c8b47
+      uses: nike4613/install-dotnet@533307d1c90c37993c8ef1397388bc9783e7b87c
       with:
         version: ${{ fromJSON(inputs.matrix).dotnet.sdk }}
         architecture: ${{ fromJSON(inputs.matrix).arch }}

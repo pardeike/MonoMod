@@ -8,6 +8,9 @@ internal sealed record OS : Enableable
     public required string Runner { get; init; }
 
     [JsonIgnore]
+    public bool UseContainer { get; init; }
+
+    [JsonIgnore]
     public bool HasFramework { get; init; }
     [JsonIgnore]
     public bool HasSystemMono { get; init; }
@@ -45,6 +48,7 @@ internal sealed record OS : Enableable
         {
             Name = "Linux",
             Runner = "ubuntu-latest",
+            UseContainer = true,
             HasSystemMono = true,
             RidName = "linux",
             UnityDllName = "monobdwgc-2.0", // TODO: is this correct?
