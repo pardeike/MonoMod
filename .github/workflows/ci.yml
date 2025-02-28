@@ -115,6 +115,8 @@ jobs:
     steps:
     - name: Wait for container builds
       shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token  }}
       run: |
         $workflow = gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" `
                      "/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}" `
