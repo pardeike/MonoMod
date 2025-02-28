@@ -7,6 +7,7 @@ RUN apt-get update \
         apt-transport-https software-properties-common \
         git git-lfs curl wget bash \
         mono-runtime \
+ && add-apt-repository ppa:dotnet/backports \
  && wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb \
  && dpkg -i packages-microsoft-prod.deb \
  && rm packages-microsoft-prod.deb \
