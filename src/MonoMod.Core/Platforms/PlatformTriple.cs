@@ -733,7 +733,7 @@ namespace MonoMod.Core.Platforms
                         //     => typeof(T).IsAssignableFrom(it.GetType());
                         //
                         // This behavior is caused by the fact that constructed
-                        // generics for reference types are Javad into a single
+                        // generics for reference types are Java'd into a single
                         // definition at runtime (and rightfully so).
                         // So, even if you try to detour a specific generic
                         // implementation using something like

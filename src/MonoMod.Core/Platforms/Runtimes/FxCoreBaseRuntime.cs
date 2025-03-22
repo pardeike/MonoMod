@@ -29,7 +29,6 @@ namespace MonoMod.Core.Platforms.Runtimes
 
         private static TypeClassification ClassifyRyuJitX86(Type type, bool isReturn)
         {
-
             while (!type.IsPrimitive || type.IsEnum)
             {
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -57,6 +56,12 @@ namespace MonoMod.Core.Platforms.Runtimes
 
             // if the type is a 64-bit integer and we're checking return, it's passed in register
             if (isReturn && typeCode is TypeCode.Int64 or TypeCode.UInt64)
+            {
+                return TypeClassification.InRegister;
+            }
+
+            // if the type is floating point and we're checking return, it's returned on the FP stack
+            if (isReturn && typeCode is TypeCode.Single or TypeCode.Double)
             {
                 return TypeClassification.InRegister;
             }
