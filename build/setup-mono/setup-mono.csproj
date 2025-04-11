@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SetupMono</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.Configuration" Version="6.10.0" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.10.0" />
+    <PackageReference Include="NuGet.PackageManagement" Version="6.10.0" />
+    <PackageReference Include="NuGet.Packaging" Version="6.10.0" />
+    <PackageReference Include="NuGet.Protocol" Version="6.10.0" />
+  </ItemGroup>
+
+</Project>

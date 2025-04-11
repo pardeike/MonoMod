@@ -1,0 +1,35 @@
+<Project>
+  
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <NoWarn>$(NoWarn);CA2007;CA1308</NoWarn>
+    
+    <MMReferenceILHelpers>false</MMReferenceILHelpers>
+    <MMIncludeUnsafeAlias>false</MMIncludeUnsafeAlias>
+    <MMReferenceSourcePkgs>false</MMReferenceSourcePkgs>
+    <MMReferenceUtils>false</MMReferenceUtils>
+    <MMReferenceBackports>false</MMReferenceBackports>
+    <MMSharedSourceFiles>false</MMSharedSourceFiles>
+    <MMUseSourceGen>false</MMUseSourceGen>
+    <MMBannedApis>false</MMBannedApis>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Chell" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Chell" />
+    <Using Include="Chell.Exports" Static="true" />
+
+    <Using Include="System.Collections.Immutable" />
+  </ItemGroup>
+  
+</Project>

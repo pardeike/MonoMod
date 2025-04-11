@@ -28,31 +28,31 @@ double
 #
 # This definition is for ILCursor generation. They will only be used for that.
 [Conversions ILCursor]
-Type -> TypeReference                   : Context.Import(operand)
-Type -> IMetadataTokenProvider          : Context.Import(operand)
-FieldInfo -> FieldReference             : Context.Import(operand)
-FieldInfo -> IMetadataTokenProvider     : Context.Import(operand)
-MethodBase -> MethodReference           : Context.Import(operand)
-MethodBase -> IMetadataTokenProvider    : Context.Import(operand)
-uint -> int                             : unchecked((int)operand)
-ulong -> long                           : unchecked((long)operand)
-Instruction -> ILLabel                  : MarkLabel(operand)
-Instruction[] -> ILLabel[]              : operand.Select(MarkLabel).ToArray()
+Type            -> TypeReference            : Context.Import(operand)
+Type            -> IMetadataTokenProvider   : Context.Import(operand)
+FieldInfo       -> FieldReference           : Context.Import(operand)
+FieldInfo       -> IMetadataTokenProvider   : Context.Import(operand)
+MethodBase      -> MethodReference          : Context.Import(operand)
+MethodBase      -> IMetadataTokenProvider   : Context.Import(operand)
+uint            -> int                      : unchecked((int)operand)
+ulong           -> long                     : unchecked((long)operand)
+Instruction     -> ILLabel                  : MarkLabel(operand)
+Instruction[]   -> ILLabel[]                : operand.Select(MarkLabel).ToArray()
 
 # ILMatcher definitions don't have a convertExpr, because we don't need to create
-# instances of the target type. Instead, we comparee against them, using IsEquivalent
+# instances of the target type. Instead, we compare against them, using IsEquivalent
 # definitions in the type being generated into.
 [Conversions ILMatcher]
-Type -> TypeReference                   :
-Type -> IMetadataTokenProvider          :
-FieldInfo -> FieldReference             :
-FieldInfo -> IMetadataTokenProvider     :
-MethodBase -> MethodReference           :
-MethodBase -> IMetadataTokenProvider    :
-uint -> int                             :
-ulong -> long                           :
-Instruction -> ILLabel                  :
-Instruction[] -> ILLabel[]              :
+Type            -> TypeReference            :
+Type            -> IMetadataTokenProvider   :
+FieldInfo       -> FieldReference           :
+FieldInfo       -> IMetadataTokenProvider   :
+MethodBase      -> MethodReference          :
+MethodBase      -> IMetadataTokenProvider   :
+uint            -> int                      :
+ulong           -> long                     :
+Instruction     -> ILLabel                  :
+Instruction[]   -> ILLabel[]                :
 
 # Skip definitions.
 # These are Opcode definitions which will get skipped for the respective generator kinds.
@@ -83,7 +83,7 @@ Ldloc VariableReference
 Ldloca VariableReference
 Stloc VariableReference
 
-# S-Form list
+# S-Form list (instructions which have _S variants)
 [SForm]
 Ldarg int
 Ldarg ParameterReference

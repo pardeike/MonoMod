@@ -12,7 +12,7 @@ namespace MonoMod.SourceGen.Internal.Analyzers
             "MMA001",
             "Do not pin strings, as it may crash some older Mono runtimes",
             "Do not pin strings, as it may crash some older Mono runtimes (see docs/RuntimeIssueNotes.md). Pin a span instead.",
-            "Stability",
+            "RuntimeIssues",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 

@@ -137,8 +137,6 @@ namespace MonoMod.Utils
         public static Instruction Create(this ILProcessor il, OpCode opcode, MethodBase method)
         {
             Helpers.ThrowIfArgumentNull(il);
-            if (method is System.Reflection.Emit.DynamicMethod)
-                return il.Create(opcode, (object)method);
             return il.Create(opcode, il.Import(method));
         }
         public static Instruction Create(this ILProcessor il, OpCode opcode, Type type)
@@ -173,11 +171,6 @@ namespace MonoMod.Utils
         {
             Helpers.ThrowIfArgumentNull(il);
             Helpers.ThrowIfArgumentNull(method);
-            if (method is System.Reflection.Emit.DynamicMethod)
-            {
-                il.Emit(opcode, (object)method);
-                return;
-            }
             il.Emit(opcode, il.Import(method));
         }
         public static void Emit(this ILProcessor il, OpCode opcode, Type type)

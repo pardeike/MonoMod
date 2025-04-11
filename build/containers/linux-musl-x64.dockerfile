@@ -1,0 +1,28 @@
+FROM alpine:3.21
+
+# First, packages
+RUN apk update \
+ && apk upgrade --no-cache \
+ && apk add --no-cache \
+    -X https://dl-cdn.alpinelinux.org/alpine/edge/main \
+    -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
+    -X https://dl-cdn.alpinelinux.org/alpine/edge/testing \
+        git git-lfs curl wget bash nodejs lttng-ust openssh-client tar \
+        mono dotnet9-runtime \
+# Dependencies for older runtimes
+ && apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/v3.18/community \
+        libssl1.1 \
+ && apk cache purge
+
+# Then, powershell
+RUN curl -L \
+         https://github.com/PowerShell/PowerShell/releases/download/v7.5.0/powershell-7.5.0-linux-musl-x64.tar.gz \
+         -o /tmp/powershell.tar.gz \
+ && mkdir -p /opt/powershell \
+ && tar xzf /tmp/powershell.tar.gz -C /opt/powershell \
+ && chmod +x /opt/powershell/pwsh \
+ && ln -s /opt/powershell/pwsh /usr/bin/pwsh \
+ && rm /tmp/powershell.tar.gz
+
+# Older runtimes can't find a valid libicu, and we don't particularly care about globalization anyway
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1

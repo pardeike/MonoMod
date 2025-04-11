@@ -1,12 +1,41 @@
 # Notes on issues in various runtime versions
 
+Martin, this is wrong.
+
+## `sizeof` IL opcode does not work with generic parameters on old Mono
+
+The title says it all. `sizeof` works fine with all other type-specs, but with generic parameters specifically,
+it always returns the system pointer size.
+
+The relevant code is in `metadata/metadata.c`, in `mono_type_size` (which `sizeof` correctly embeds as a constant):
+
+```c
+int
+mono_type_size (MonoType *t, int *align)
+{
+    // ...
+
+	switch (t->type){
+        // ...
+	case MONO_TYPE_VAR:
+	case MONO_TYPE_MVAR:
+		/* FIXME: Martin, this is wrong. */
+		*align = __alignof__(gpointer);
+		return sizeof (gpointer);
+        // ...
+	}
+
+    // ...
+}
+```
+
 ## `fixed` on strings in old Mono
 
 Some old versions of Mono have broken `conv.u` instruction handling.
 
 The following code will crash those old versions with an assert in the JIT's local propagation routine:
 
-```cs
+```csharp
 fixed (char* pStr = "some string")
 {
     // ...
@@ -15,7 +44,7 @@ fixed (char* pStr = "some string")
 
 This is because the sequence that Roslyn emits for `fixed` over a string is this:
 
-```
+```il
   .locals (
     string pinned stringLocalMarkedPinned,
     char* ptrLocal

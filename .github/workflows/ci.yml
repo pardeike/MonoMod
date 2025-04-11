@@ -11,60 +11,85 @@ env:
   DOTNET_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
   NUGET_PACKAGES: ${{github.workspace}}/artifacts/pkg
+  
+# If new commits are pushed, don't bother finishing the current run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
 
 # We'll have a job for building (that runs on x64 machines only, one for each OS to make sure it actually builds)
 # Then, we'll take the result from one of those (probaly Linux) and distribute build artifacts to testers to run
 # a load of tests. This will (eventually) include ARM runners, where possible.
 jobs:
-  event_file:
-    # This job uploads an event file so that our test aggregator and recorder can understand this event
-    name: "Event File"
+  setup:
+    name: Setup
     runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+      ver: ${{ steps.computever.outputs.ver }}
+      matrix: ${{ steps.compute-matrix.outputs.matrix }}
     steps:
-    - name: Upload
+    - name: Check if this run should skip
+      id: skip_check
+      uses: fkirc/skip-duplicate-actions@v5
+      with:
+        cancel_others: true
+        concurrent_skipping: same_content_newer
+
+    - name: Upload event file
       uses: actions/upload-artifact@v4
       with:
         name: test-event-file
         path: ${{ github.event_path }}
         retention-days: 1
-  
-  compute-version:
-    name: Compute Version
-    runs-on: ubuntu-latest
-    outputs:
-      ver: ${{ steps.computever.outputs.ver }}
-    steps:
-    - id: computever
+
+    - name: Compute Version
+      id: computever
       run: echo "ver=$(Get-Date -Format y.M.d).${{ github.run_number }}.${{ github.run_attempt }}" >> $env:GITHUB_OUTPUT
-      
-  compute-test-matrix:
-    name: Compute Test Matrix
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.compute-matrix.outputs.matrix }}
-    steps:
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
         lfs: false
         submodules: false
+        
+    # TODO: maybe we can eventually use package locks for package caching?
+    
+    - name: Install .NET SDK
+      if: steps.skip_check.outputs.should_skip != 'true'
+      uses: nike4613/install-dotnet@533307d1c90c37993c8ef1397388bc9783e7b87c
+      with:
+        global-json: global.json
+        
+    # NOTE: manual package caching
+    - name: Cache restored NuGet packages
+      if: steps.skip_check.outputs.should_skip != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets', 'nuget.config', 'global.json') }}
+        restore-keys: ${{ runner.os }}-nuget-v1-
+
     - name: Compute test matrix
+      if: steps.skip_check.outputs.should_skip != 'true'
       id: compute-matrix
-      run: ./.github/gen-test-matrix.ps1 -MatrixOutName matrix -GithubOutput $env:GITHUB_OUTPUT
+      run: dotnet run --project ./build/gen-test-matrix/gen-test-matrix.csproj -c Release -- "${{ github.repository_owner }}" $env:GITHUB_OUTPUT matrix
   
   build-testassets:
-    needs: compute-version
-    name: 'Build #${{ needs.compute-version.outputs.ver }} (Linux)'
+    needs: setup
+    if: needs.setup.outputs.should_skip != 'true'
+    name: 'Build #${{ needs.setup.outputs.ver }} (Linux)'
     uses: ./.github/workflows/build.yml
     with:
       os: ubuntu-latest
       osname: Linux
-      version: ${{ needs.compute-version.outputs.ver }}
+      version: ${{ needs.setup.outputs.ver }}
       upload-packages: true
       upload-tests: true
 
   build:
-    needs: compute-version
+    needs: setup
+    if: needs.setup.outputs.should_skip != 'true'
     strategy:
       matrix:
         os: [windows-latest, macos-13]
@@ -74,20 +99,64 @@ jobs:
         - os: macos-13
           name: MacOS
           
-    name: 'Build #${{ needs.compute-version.outputs.ver }} (${{ matrix.name }})'
+    name: 'Build #${{ needs.setup.outputs.ver }} (${{ matrix.name }})'
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
       osname: ${{ matrix.name }}
-      version: ${{ needs.compute-version.outputs.ver }}
+      version: ${{ needs.setup.outputs.ver }}
       upload-packages: false
       upload-tests: false
-      
+
+  wait-for-containers:
+    name: Wait for Docker containers
+    needs: setup
+    if: needs.setup.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for container builds
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token  }}
+      run: |
+        $sha = '${{ github.event.pull_request.head.sha }}';
+        if (-not $sha) { $sha = '${{ github.sha }}'; }
+        $workflow = gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" `
+                     "/repos/${{ github.repository }}/actions/runs?head_sha=$sha" `
+                     | ConvertFrom-Json `
+                     | % { $_.workflow_runs } `
+                     | Where { $_.path -eq ".github/workflows/containers.yml" }
+                     | Select -Property id
+        if ($null -eq $workflow) { echo "No containers workflow run found."; exit 0; } # containers didn't need to be built, exit normally
+        # we ARE waiting for container build, poll every 30s
+        while ($true)
+        {
+          $conclusion = gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" `
+            "/repos/${{ github.repository }}/actions/runs/$($workflow.id)" `
+            | ConvertFrom-Json `
+            | % { $_.conclusion }
+          if ($null -ne $conclusion)
+          {
+            if ($conclusion -ne "success")
+            {
+              echo "Container build had conclusion '$conclusion'. Failing.";
+              exit 1;
+            }
+            else
+            {
+              echo "Container build succeeded. Continuing."
+              exit 0;
+            }
+          }
+          Start-Sleep -Seconds 30;
+        }
+
   test:
-    needs: [compute-test-matrix, build-testassets]
+    needs: [setup, build-testassets, wait-for-containers]
+    if: needs.setup.outputs.should_skip != 'true'
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.compute-test-matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
     uses: ./.github/workflows/test.yml
     name: Test ${{ matrix.title }}
     with:

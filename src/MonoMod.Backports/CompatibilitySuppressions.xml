@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- https://learn.microsoft.com/en-us/dotnet/fundamentals/package-validation/diagnostic-ids -->
+<!-- https://learn.microsoft.com/dotnet/fundamentals/package-validation/diagnostic-ids -->
 <Suppressions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
@@ -72,6 +72,36 @@
     <Target>T:System.Runtime.CompilerServices.TupleElementNamesAttribute</Target>
     <Left>lib/net35/MonoMod.Backports.dll</Left>
     <Right>lib/net452/MonoMod.Backports.dll</Right>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0021</DiagnosticId>
+    <Target>T:System.Collections.Concurrent.ConcurrentDictionary`2``0:notnull</Target>
+    <Left>lib/net35/MonoMod.Backports.dll</Left>
+    <Right>lib/net452/MonoMod.Backports.dll</Right>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0021</DiagnosticId>
+    <Target>T:System.Tuple`8``7:notnull</Target>
+    <Left>lib/net35/MonoMod.Backports.dll</Left>
+    <Right>lib/net452/MonoMod.Backports.dll</Right>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0021</DiagnosticId>
+    <Target>T:System.ValueTuple`8``7:!:System.ValueType</Target>
+    <Left>lib/net35/MonoMod.Backports.dll</Left>
+    <Right>lib/net452/MonoMod.Backports.dll</Right>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0021</DiagnosticId>
+    <Target>T:System.Collections.Concurrent.ConcurrentDictionary`2``0:notnull</Target>
+    <Left>lib/netcoreapp2.1/MonoMod.Backports.dll</Left>
+    <Right>lib/netcoreapp3.0/MonoMod.Backports.dll</Right>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0021</DiagnosticId>
+    <Target>T:System.Tuple`8``7:notnull</Target>
+    <Left>lib/netcoreapp2.1/MonoMod.Backports.dll</Left>
+    <Right>lib/netcoreapp3.0/MonoMod.Backports.dll</Right>
   </Suppression>
   <Suppression>
     <DiagnosticId>CP1002</DiagnosticId>

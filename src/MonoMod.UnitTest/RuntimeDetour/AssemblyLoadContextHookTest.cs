@@ -33,6 +33,14 @@ namespace MonoMod.UnitTest
         [Fact]
         public void TestAssemblyLoadContextHook()
         {
+            if (PlatformDetection.Runtime is RuntimeKind.Mono
+                && PlatformDetection.Corelib is CorelibKind.Core
+                && PlatformDetection.RuntimeVersion < new Version(8, 0))
+            {
+                // on .NET mono < 8.0, ALCs are not supported
+                return;
+            }
+
             IsNonALC = true;
 
             WaitForWeakReferenceToDie(TestAssemblyLoadContextHookStep(0, 0));

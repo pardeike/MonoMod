@@ -11,10 +11,11 @@ namespace MonoMod.Core.Platforms.Architectures
         public ArchitectureFeature Features => ArchitectureFeature.CreateAltEntryPoint;
 
         private BytePatternCollection? lazyKnownMethodThunks;
-        public unsafe BytePatternCollection KnownMethodThunks => Helpers.GetOrInit(ref lazyKnownMethodThunks, &CreateKnownMethodThunks);
+        public unsafe BytePatternCollection KnownMethodThunks => Helpers.GetOrInit(ref lazyKnownMethodThunks, createKnownMethodThunksFunc);
 
         public IAltEntryFactory AltEntryFactory { get; }
 
+        private static readonly Func<BytePatternCollection> createKnownMethodThunksFunc = CreateKnownMethodThunks;
         private static BytePatternCollection CreateKnownMethodThunks()
         {
             const ushort An = BytePattern.SAnyValue;
@@ -197,9 +198,9 @@ namespace MonoMod.Core.Platforms.Architectures
 
         private const int SpecEntryStubArgOffs = 1;
         private const int SpecEntryStubTargetOffs = 6;
-        private static ReadOnlySpan<byte> SpecEntryStub => new byte[] {
+        private static ReadOnlySpan<byte> SpecEntryStub => [
             0xB8, 0x00, 0x00, 0x00, 0x00, 0xB9, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE1
-        };
+        ];
 
         public IAllocatedMemory CreateSpecialEntryStub(IntPtr target, IntPtr argument)
         {
@@ -207,9 +208,8 @@ namespace MonoMod.Core.Platforms.Architectures
             SpecEntryStub.CopyTo(stub);
             Unsafe.WriteUnaligned(ref stub[SpecEntryStubTargetOffs], target);
             Unsafe.WriteUnaligned(ref stub[SpecEntryStubArgOffs], argument);
-            Helpers.Assert(system.MemoryAllocator.TryAllocate(new(stub.Length) { Executable = true, Alignment = 1 }, out var alloc));
-            system.PatchData(PatchTargetKind.Executable, alloc.BaseAddress, stub, default);
-            return alloc;
+
+            return Shared.CreateSingleExecutableStub(system, stub);
         }
     }
 }

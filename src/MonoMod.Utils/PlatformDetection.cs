@@ -8,6 +8,20 @@ using System.Threading;
 
 namespace MonoMod.Utils
 {
+    /// <summary>
+    /// A utility type which provides information about the executing runtime, including:
+    /// <list type="bullet">
+    /// <item>Operating system</item>
+    /// <item>Architecture</item>
+    /// <item>Runtime
+    ///     <list type="bullet">
+    ///     <item>Kind (Framework, CoreCLR, Mono)</item>
+    ///     <item>Version</item>
+    ///     </list>
+    /// </item>
+    /// <item>Corelib</item>
+    /// </list>
+    /// </summary>
     public static class PlatformDetection
     {
         #region OS/Arch
@@ -31,6 +45,9 @@ namespace MonoMod.Utils
             _ = Interlocked.Exchange(ref platInitState, 1);
         }
 
+        /// <summary>
+        /// Gets the <see cref="OSKind"/> identifying the operating system that is running this application.
+        /// </summary>
         public static OSKind OS
         {
             get
@@ -40,6 +57,22 @@ namespace MonoMod.Utils
             }
         }
 
+        /// <summary>
+        /// Gets the <see cref="ArchitectureKind"/> identifying the architecture of the current process.
+        /// </summary>
+        /// <remarks>
+        /// Note that the architecture running here is not necessarily the architecture of the operating system.
+        /// In many cases, an OS can run code that is not its own native architecture, for instance: 
+        /// <list type="bullet">
+        /// <item>Windows running on <see cref="ArchitectureKind.x86_64"/> can natively run
+        ///   <see cref="ArchitectureKind.x86"/> code via its WOW64 subsystem.</item>
+        /// <item>Linux running on <see cref="ArchitectureKind.x86_64"/> can natively run <see cref="ArchitectureKind.x86"/>
+        ///   code in a similar manner to Windows.</item>
+        /// <item>MacOS running on <see cref="ArchitectureKind.Arm64"/> can run <see cref="ArchitectureKind.x86_64"/> code
+        ///   via its Rosetta emulation layer.</item>
+        /// </list>
+        /// Generally, the most useful value is the process's architecture, so that's what this returns.
+        /// </remarks>
         public static ArchitectureKind Architecture
         {
             get
@@ -420,6 +453,7 @@ namespace MonoMod.Utils
         #region Runtime
         private static int runtimeInitState;
         private static RuntimeKind runtime;
+        private static CorelibKind corelib;
         private static Version? runtimeVersion;
 
         [MemberNotNull(nameof(runtimeVersion))]
@@ -436,12 +470,16 @@ namespace MonoMod.Utils
 
             var runtimeInfo = DetermineRuntimeInfo();
             runtime = runtimeInfo.Rt;
+            corelib = runtimeInfo.Cor;
             runtimeVersion = runtimeInfo.Ver;
 
             Thread.MemoryBarrier();
             _ = Interlocked.Exchange(ref runtimeInitState, 1);
         }
 
+        /// <summary>
+        /// Gets the current runtime's implementation.
+        /// </summary>
         public static RuntimeKind Runtime
         {
             get
@@ -451,6 +489,24 @@ namespace MonoMod.Utils
             }
         }
 
+        /// <summary>
+        /// Gets the current runtime's corelib.
+        /// </summary>
+        public static CorelibKind Corelib
+        {
+            get
+            {
+                EnsureRuntimeInitialized();
+                return corelib;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current runtime's version.
+        /// </summary>
+        /// <remarks>
+        /// On .NET Framework, this version will semi-frequently be nonsense, and the same is true on .NET Core 2.1 and earlier.
+        /// </remarks>
         public static Version RuntimeVersion
         {
             get
@@ -463,7 +519,7 @@ namespace MonoMod.Utils
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
             Justification = "In old versions of Framework, there is no Version.TryParse, and so we must call the constructor " +
             "and catch any exception that may ocurr.")]
-        private static (RuntimeKind Rt, Version Ver) DetermineRuntimeInfo()
+        private static (RuntimeKind Rt, CorelibKind Cor, Version Ver) DetermineRuntimeInfo()
         {
             RuntimeKind runtime;
             Version? version = null; // an unknown version
@@ -475,6 +531,8 @@ namespace MonoMod.Utils
                 Type.GetType("Mono.RuntimeStructs") != null;
 
             var isCoreBcl = typeof(object).Assembly.GetName().Name == "System.Private.CoreLib";
+
+            var corelib = isCoreBcl ? CorelibKind.Core : CorelibKind.Framework;
 
             if (isMono)
             {
@@ -535,7 +593,8 @@ namespace MonoMod.Utils
                 }
                 else if (fxDesc.StartsWith(Net5Plus, StringComparison.Ordinal))
                 {
-                    runtime = RuntimeKind.CoreCLR;
+                    // There is such a thing as .NET Mono in dotnet/runtime, which reports identically to CoreCLR. It also uses the same BCL.
+                    runtime = isMono ? RuntimeKind.Mono : RuntimeKind.CoreCLR;
                     prefixLength = Net5Plus.Length;
                 }
                 else
@@ -570,9 +629,9 @@ namespace MonoMod.Utils
 
             // TODO: map strange (read: Framework) versions correctly
 
-            MMDbgLog.Info($"Detected runtime: {runtime} {version?.ToString() ?? "(null)"}");
+            MMDbgLog.Info($"Detected runtime: {runtime} {version?.ToString() ?? "(null)"} using {corelib} corelib");
 
-            return (runtime, version ?? new Version(0, 0));
+            return (runtime, corelib, version ?? new Version(0, 0));
         }
 
         #endregion

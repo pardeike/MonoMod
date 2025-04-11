@@ -135,9 +135,9 @@ namespace MonoMod.Cil
         public static bool Match<T>(this Instruction instr, OpCode opcode, [MaybeNullWhen(false)] out T value)
         {
             Helpers.ThrowIfArgumentNull(instr);
-            if (instr.OpCode == opcode)
+            if (instr.OpCode == opcode && instr.Operand is T operand)
             {
-                value = (T)instr.Operand;
+                value = operand;
                 return true;
             }
             else
@@ -214,6 +214,20 @@ namespace MonoMod.Cil
             }
         }
 
+        private static int ParameterToIndex(object? obj)
+            => obj switch
+            {
+                null => 0,
+                int i => i,
+                short i => i,
+                uint i => (int)i,
+                ushort i => i,
+                byte i => i,
+                sbyte i => i,
+                ParameterReference pr => pr.Index,
+                _ => throw new InvalidCastException(),
+            };
+
         /// <summary>Matches an instruction with opcode <see cref="OpCodes.Starg"/>.</summary>
         /// <param name="instr">The instruction to try to match.</param>
         /// <param name="value">The operand value of the instruction.</param>
@@ -223,7 +237,7 @@ namespace MonoMod.Cil
             Helpers.ThrowIfArgumentNull(instr);
             if (instr.OpCode == OpCodes.Starg || instr.OpCode == OpCodes.Starg_S)
             {
-                value = ((ParameterReference)instr.Operand).Index;
+                value = ParameterToIndex(instr.Operand);
                 return true;
             }
             else
@@ -242,7 +256,7 @@ namespace MonoMod.Cil
             Helpers.ThrowIfArgumentNull(instr);
             if (instr.OpCode == OpCodes.Ldarga || instr.OpCode == OpCodes.Ldarga_S)
             {
-                value = ((ParameterReference)instr.Operand).Index;
+                value = ParameterToIndex(instr.Operand);
                 return true;
             }
             else
@@ -251,6 +265,20 @@ namespace MonoMod.Cil
                 return false;
             }
         }
+
+        private static int VarToIndex(object? obj)
+            => obj switch
+            {
+                null => 0,
+                int i => i,
+                short i => i,
+                uint i => (int)i,
+                ushort i => i,
+                byte i => i,
+                sbyte i => i,
+                VariableReference vr => vr.Index,
+                _ => throw new InvalidCastException(),
+            };
 
         /// <summary>Matches an instruction with opcode <see cref="OpCodes.Ldloc"/>.</summary>
         /// <param name="instr">The instruction to try to match.</param>
@@ -261,7 +289,7 @@ namespace MonoMod.Cil
             Helpers.ThrowIfArgumentNull(instr);
             if (instr.OpCode == OpCodes.Ldloc || instr.OpCode == OpCodes.Ldloc_S)
             {
-                value = ((VariableReference)instr.Operand).Index;
+                value = VarToIndex(instr.Operand);
                 return true;
             }
             else if (instr.OpCode == OpCodes.Ldloc_0)
@@ -300,7 +328,7 @@ namespace MonoMod.Cil
             Helpers.ThrowIfArgumentNull(instr);
             if (instr.OpCode == OpCodes.Stloc || instr.OpCode == OpCodes.Stloc_S)
             {
-                value = ((VariableReference)instr.Operand).Index;
+                value = VarToIndex(instr.Operand);
                 return true;
             }
             else if (instr.OpCode == OpCodes.Stloc_0)
@@ -339,7 +367,7 @@ namespace MonoMod.Cil
             Helpers.ThrowIfArgumentNull(instr);
             if (instr.OpCode == OpCodes.Ldloca || instr.OpCode == OpCodes.Ldloca_S)
             {
-                value = ((VariableReference)instr.Operand).Index;
+                value = VarToIndex(instr.Operand);
                 return true;
             }
             else
@@ -430,9 +458,9 @@ namespace MonoMod.Cil
         public static bool MatchCallOrCallvirt(this Instruction instr, [MaybeNullWhen(false)] out MethodReference value)
         {
             Helpers.ThrowIfArgumentNull(instr);
-            if (instr.OpCode == OpCodes.Call || instr.OpCode == OpCodes.Callvirt)
+            if ((instr.OpCode == OpCodes.Call || instr.OpCode == OpCodes.Callvirt) && instr.Operand is MethodReference mr)
             {
-                value = (MethodReference)instr.Operand;
+                value = mr;
                 return true;
             }
             else

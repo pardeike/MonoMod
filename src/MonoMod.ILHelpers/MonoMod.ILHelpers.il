@@ -18,7 +18,7 @@
     {
         .maxstack 8
         ldarg.0
-        tail.
+        //tail. // The tail prefix on calli seems to be considered by many tools to be invalid.
         calli !!T()
         ret
     } // end of method Unsafe::Read
@@ -31,65 +31,40 @@
         callvirt instance !0 class [FUNC_ASSEMBLY]System.Func`1<!!T>::Invoke()
         ret
     }
-
-    // This exists to work around the fact that on old Mono, the normal string pinning sequence is broken.
-    // See docs/RuntimeIssueNodes.md
-    .method public hidebysig static native int GetRawDataOffset(object obj, uint8& rawData) cil managed aggressiveinlining
+    
+    .method public hidebysig static !!T& ObjectAsRef<T>(object obj) cil managed aggressiveinlining
     {
-        .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = (
-            01 00 01 00 00
+        .maxstack 1
+        .locals (
+            object pinned pin
+#ifndef netcoreapp
+            , !!T** refPtr
+            , !!T& finalRef
+#endif
         )
 
-        .maxstack 8
-        .locals init (
-            object pinned str,
-            void*& ptrRef
-        )
+        // pin obj
+        ldarg obj
+        stloc pin
 
-        ldarg.1
+#ifdef netcoreapp
+        // return ref *Unsafe.BitCast<object, T*>(pin);
+        ldloc pin
         conv.u
-
-        ldarg.0
-        stloc str
-        ldloca str
+#else
+        // see docs/RuntimeIssueNotes.md - "`fixed` on strings in old Mono" for why this is necessary
+        // T* ptr = *(T**)(&pin);
+        ldloca pin
         conv.u
-        stloc ptrRef
-        ldloc ptrRef
+        stloc refPtr
+        ldloc refPtr
         ldind.i
-        sub
+        // return Unsafe.AsRef<T>(ptr);
+        // see the comments inside that function for why don't just immediately ret
+        stloc finalRef
+        ldloc finalRef
+#endif
 
-        ret
-    }
-
-    .method public hidebysig static !!T& UnboxAnyUnsafe<T>(object& 'box') cil managed aggressiveinlining
-    {
-        .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = (
-            01 00 02 00 00
-        )
-
-        .maxstack 8
-        .locals init (
-            [0] !!T
-        )
-
-        // if (default(T) == null)
-        ldloca.s 0
-        initobj !!T
-        ldloc.0
-        box !!T
-        ldnull
-        ceq
-        brfalse ValType
-
-        // it's a reference type, so we just return the ref like Unsafe.As
-        ldarg.0
-        ret
-
-      ValType:
-        // it's a value type, so we want to unbox and return the ref
-        ldarg.0
-        ldind.ref
-        unbox !!T
         ret
     }
 }

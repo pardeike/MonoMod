@@ -16,12 +16,13 @@ jobs:
     permissions:
       checks: write
       pull-requests: write
-      contents: read
+      contents: write
       issues: read
       actions: read
+      statuses: read
 
     steps:
-    - name: Download test results
+    - name: Download event file
       uses: actions/download-artifact@v4
       with:
         run-id: ${{ github.event.workflow_run.id }}
@@ -36,25 +37,14 @@ jobs:
         github-token: ${{ github.token }}
         pattern: test-results *
         merge-multiple: false
-
-    #- name: Publish Test Results
-    #  uses: EnricoMi/publish-unit-test-result-action@v2
-    #  with:
-    #    commit: ${{ github.event.workflow_run.head_sha }}
-    #    event_file: event.json
-    #    event_name: ${{ github.event.workflow_run.event }}
-    #
-    #    files: '**/*.trx'
-    #    comment_mode: ${{ (github.event.workflow_run.event == 'pull_request' || github.event_name == 'pull_request') && 'failures' || 'off' }}
-    #    report_individual_runs: true
-    #    compare_to_earlier_commit: false
-
+        
     - name: Publish Test Results
-      uses: nike4613/actions-test-results@v2
+      uses: nike4613/actions-test-results@v3
       with:
         commit: ${{ github.event.workflow_run.head_sha }}
         event_file: event.json
         event_name: ${{ github.event.workflow_run.event }}
+        gist_token: ${{ secrets.gist_token }}
     
         files: |
           **/*.trx

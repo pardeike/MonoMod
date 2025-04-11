@@ -31,7 +31,7 @@ namespace MonoMod.SourceGen.Internal.Cil
             EquatableArray<SkipDefSet> SkipDefs,
             EquatableArray<SkipDefSet> SkipBaseOnlyDefs,
             EquatableArray<OpcodeDef> SForms,
-            EquatableArray<(OpcodeDef Op, string Doc)> Opcodes);
+            EquatableArray<(OpcodeDef Op, string? Doc)> Opcodes);
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -146,7 +146,7 @@ namespace MonoMod.SourceGen.Internal.Cil
             using var reader = new SourceTextReader(text.Text);
 
             using var usingsBuilder = ImmutableArrayBuilder<string>.Rent();
-            using var opcodeDefsBuilder = ImmutableArrayBuilder<(OpcodeDef, string)>.Rent();
+            using var opcodeDefsBuilder = ImmutableArrayBuilder<(OpcodeDef, string?)>.Rent();
             using var valueTypesBuilder = ImmutableArrayBuilder<string>.Rent();
             using var sformsBuilder = ImmutableArrayBuilder<OpcodeDef>.Rent();
 
@@ -275,7 +275,7 @@ namespace MonoMod.SourceGen.Internal.Cil
                 }
             }
 
-            static OpcodeDef? ParseOpcodeLine(string line, out string doc)
+            static OpcodeDef? ParseOpcodeLine(string line, out string? doc)
             {
                 var spcIdx = line.IndexOf(' ');
                 var tslashIdx = spcIdx < 0 ? -1 : line.IndexOf("///", spcIdx, StringComparison.Ordinal);
@@ -291,8 +291,7 @@ namespace MonoMod.SourceGen.Internal.Cil
                 if (string.IsNullOrEmpty(argType))
                     argType = null;
                 doc = line.Substring(tslashIdx < line.Length ? tslashIdx + 3 : tslashIdx).Trim();
-                if (string.IsNullOrEmpty(doc))
-                    doc = $"<see cref=\"OpCodes.{opcodeName}\"/>";
+                if (string.IsNullOrEmpty(doc)) doc = null;
 
                 return new OpcodeDef(opcodeName, opcodeName.Replace("_", ""), argType);
             }
@@ -371,6 +370,16 @@ namespace MonoMod.SourceGen.Internal.Cil
                 skipBaseOnlies = ImmutableArray.Create<OpcodeDef>();
         }
 
+        private static string GetOpcodeDoc(OpcodeDef def, bool hasSForm)
+        {
+            var str = $"<see cref=\"OpCodes.{def.Opcode}\"/>";
+            if (hasSForm)
+            {
+                str += $" or <see cref=\"OpCodes.{def.Opcode}_S\"/>";
+            }
+            return str;
+        }
+
         private static void GenerateCursorKind(SourceProductionContext spc, (TypeWithEmitOverloads type, ParsedDefFile defs) t)
         {
             var (type, defs) = t;
@@ -384,15 +393,18 @@ namespace MonoMod.SourceGen.Internal.Cil
             type.Type.AppendEnterContext(builder);
             GetConversionsAndSkips(type, defs, out var conversions, out var skips, out _);
 
-            foreach (var (op, doc) in defs.Opcodes)
+            foreach (var (op, explDoc) in defs.Opcodes)
             {
                 if (skips.Contains(op))
                     continue;
+
+                var doc = explDoc?? GetOpcodeDoc(op, defs.SForms.AsImmutableArray().Contains(op));
+
                 if (op.ArgumentType is null)
                 {
                     _ = builder
-                        .WriteLine($"""/// <summary>Emits a {doc} opcode to the current cursor position.</summary>""")
-                        .WriteLine("/// <returns>this</returns>")
+                        .WriteLine($"/// <summary>Emits a {doc} opcode to the current cursor position.</summary>")
+                        .WriteLine("/// <returns><see langword=\"this\"/></returns>")
                         .WriteLine($"public {type.Type.InnermostType.FqName} Emit{op.Formatted}() => _Insert(IL.Create(OpCodes.{op.Opcode}));")
                         .WriteLine();
                 }
@@ -417,11 +429,11 @@ namespace MonoMod.SourceGen.Internal.Cil
                     static void EmitMethodWithArg(CodeBuilder builder, string selfFqName, OpcodeDef op, string doc, string argType, string targetType, string argExpr)
                     {
                         _ = builder
-                            .WriteLine($"/// <summary>Emits a {doc} opcode with a <see cref=\"T:{argType}\"/> operand to the current cursor position.</summary>")
+                            .WriteLine($"/// <summary>Emits a {doc} opcode with a <see cref=\"{argType.Trim(['[', ']'])}\"/> operand to the current cursor position.</summary>")
                             .Write("""/// <param name="operand">The emitted instruction's operand.""");
                         if (argType != targetType)
                         {
-                            _ = builder.Write($$""" Will be automatically converted to a <see cref="T:{{targetType}}" />.""");
+                            _ = builder.Write($$""" Will be automatically converted to a <see cref="{{targetType.Trim(['[', ']'])}}" />.""");
                         }
                         _ = builder
                             .WriteLine("</param>")
@@ -451,15 +463,17 @@ namespace MonoMod.SourceGen.Internal.Cil
 
             GetConversionsAndSkips(type, defs, out var conversions, out var skips, out var skipBaseOnlies);
 
-            foreach (var (op, doc) in defs.Opcodes)
+            foreach (var (op, explDoc) in defs.Opcodes)
             {
                 if (skips.Contains(op))
                     continue;
 
+                var hasSForm = defs.SForms.AsImmutableArray().Contains(op);
+
                 var normalCond = $"global::MonoMod.Utils.Helpers.ThrowIfNull(instr).OpCode == OpCodes.{op.Opcode}";
-                var sformCond = defs.SForms.AsImmutableArray().Contains(op)
-                    ? $" || instr.OpCode == OpCodes.{op.Opcode}_S"
-                    : "";
+                var sformCond = hasSForm ? $" || instr.OpCode == OpCodes.{op.Opcode}_S" : "";
+
+                var doc = explDoc ?? GetOpcodeDoc(op, hasSForm);
 
                 var matchCond = normalCond + sformCond;
 
@@ -488,22 +502,22 @@ namespace MonoMod.SourceGen.Internal.Cil
                             .WriteLine("/// <returns><see langword=\"true\"/> if the instruction matches; <see langword=\"false\"/> otherwise.</returns>")
                             .WriteLine($"public static bool Match{op.Formatted}(this Instruction instr, [global::System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out {op.ArgumentType} value)")
                             .OpenBlock()
-                            .WriteLine($"if ({matchCond})")
+                            .WriteLine($"if (({matchCond}) && instr.Operand is {op.ArgumentType} op)")
                             .OpenBlock()
-                            .WriteLine($"value = ({op.ArgumentType})instr.Operand;")
-                            .WriteLine("return true;")
+                                .WriteLine("value = op;")
+                                .WriteLine("return true;")
                             .CloseBlock()
                             .WriteLine("else")
                             .OpenBlock()
-                            .WriteLine("value = default;")
-                            .WriteLine("return false;")
+                                .WriteLine("value = default;")
+                                .WriteLine("return false;")
                             .CloseBlock()
                             .CloseBlock()
                             .WriteLine();
                     }
 
                     _ = builder
-                        .WriteLine($"/// <summary>Matches an instruction with opcode {doc} .</summary>")
+                        .WriteLine($"/// <summary>Matches an instruction with opcode {doc}.</summary>")
                         .WriteLine("/// <param name=\"instr\">The instruction to try to match.</param>")
                         .WriteLine("/// <param name=\"value\">The operand value required for the instruction to match.</param>")
                         .WriteLine("/// <returns><see langword=\"true\"/> if the instruction matches; <see langword=\"false\"/> otherwise.</returns>")

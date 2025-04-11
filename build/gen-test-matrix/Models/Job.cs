@@ -1,0 +1,11 @@
+﻿namespace GenTestMatrix.Models;
+
+internal sealed record Job
+{
+    public required string Title { get; init; }
+    public required OS OS { get; init; }
+    public required Dotnet Dotnet { get; init; }
+    public required string Arch { get; init; }
+    public string? Container { get; init; }
+    public bool? UsePGO { get; init; }
+}

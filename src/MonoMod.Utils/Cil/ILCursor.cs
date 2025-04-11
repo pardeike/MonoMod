@@ -221,7 +221,7 @@ namespace MonoMod.Cil
         /// <param name="insn">The target instruction</param>
         /// <param name="moveType">Where to move in relation to the target instruction and incoming labels (branches)</param>
         /// <param name="setTarget">Whether to set the `SearchTarget` and skip the target instruction with the next search function</param>
-        /// <returns>this</returns>
+        /// <returns><see langword="this"/></returns>
         public ILCursor Goto(Instruction? insn, MoveType moveType = MoveType.Before, bool setTarget = false)
         {
             if (moveType == MoveType.After)
@@ -246,7 +246,7 @@ namespace MonoMod.Cil
         /// <summary>
         /// Move the cursor after incoming labels (branches). If an instruction is emitted, all labels which currently point to Next, will point to the newly emitted instruction.
         /// </summary>
-        /// <returns>this</returns>
+        /// <returns><see langword="this"/></returns>
         public ILCursor MoveAfterLabels()
         {
             MoveAfterLabels(intoEHRanges: true);
@@ -257,7 +257,7 @@ namespace MonoMod.Cil
         /// Move the cursor after incoming labels (branches). If an instruction is emitted, all labels which currently point to Next, will point to the newly emitted instruction.
         /// </summary>
         /// <param name="intoEHRanges">Whether to move the cursor into any try or catch ranges which start at the current position. Defaults to true.</param>
-        /// <returns>this</returns>
+        /// <returns><see langword="this"/></returns>
         public ILCursor MoveAfterLabels(bool intoEHRanges)
         {
             _afterLabels = IncomingLabels.ToArray();
@@ -269,7 +269,7 @@ namespace MonoMod.Cil
         /// <summary>
         /// Move the cursor before incoming labels (branches). This is the default behaviour. Emitted instructions will not cause labels to change targets.
         /// </summary>
-        /// <returns>this</returns>
+        /// <returns><see langword="this"/></returns>
         public ILCursor MoveBeforeLabels()
         {
             _afterLabels = null;
@@ -281,7 +281,7 @@ namespace MonoMod.Cil
         /// <summary>
         /// Move the cursor to a target index. Supports negative indexing. See <see cref="Goto(Instruction, MoveType, bool)"/>
         /// </summary>
-        /// <returns>this</returns>
+        /// <returns><see langword="this"/></returns>
         public ILCursor Goto(int index, MoveType moveType = MoveType.Before, bool setTarget = false)
         {
             if (index < 0)
@@ -293,15 +293,15 @@ namespace MonoMod.Cil
         /// <summary>
         /// Overload for <c>Goto(label.Target)</c>. <paramref name="moveType"/> defaults to MoveType.AfterLabel
         /// </summary>
-        /// <returns>this</returns>
+        /// <returns><see langword="this"/></returns>
         public ILCursor GotoLabel(ILLabel label, MoveType moveType = MoveType.AfterLabel, bool setTarget = false)
             => Goto(Helpers.ThrowIfNull(label).Target, moveType, setTarget);
 
         /// <summary>
         /// Search forward and moves the cursor to the next sequence of instructions matching the corresponding predicates. See also <seealso cref="ILCursor.TryGotoNext(MoveType, Func{Instruction, bool}[])"/>
         /// </summary>
-        /// <returns>this</returns>
-        /// <exception cref="KeyNotFoundException">If no match is found</exception>
+        /// <returns><see langword="this"/></returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no match is found</exception>
         public ILCursor GotoNext(MoveType moveType = MoveType.Before, params Func<Instruction, bool>[] predicates)
         {
             if (!TryGotoNext(moveType, predicates))
@@ -313,7 +313,7 @@ namespace MonoMod.Cil
         /// <summary>
         /// Search forward and moves the cursor to the next sequence of instructions matching the corresponding predicates.
         /// </summary>
-        /// <returns>True if a match was found</returns>
+        /// <returns><see langword="true"/> if a matching instruction was found; <see langword="false"/> if one was not.</returns>
         public bool TryGotoNext(MoveType moveType = MoveType.Before, params Func<Instruction, bool>[] predicates)
         {
             Helpers.ThrowIfArgumentNull(predicates);
@@ -345,8 +345,8 @@ namespace MonoMod.Cil
         /// <summary>
         /// Search backward and moves the cursor to the next sequence of instructions matching the corresponding predicates. See also <seealso cref="TryGotoPrev(MoveType, Func{Instruction, bool}[])"/>
         /// </summary>
-        /// <returns>this</returns>
-        /// <exception cref="KeyNotFoundException">If no match is found</exception>
+        /// <returns><see langword="this"/></returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no match is found</exception>
         public ILCursor GotoPrev(MoveType moveType = MoveType.Before, params Func<Instruction, bool>[] predicates)
         {
             if (!TryGotoPrev(moveType, predicates))
@@ -358,7 +358,7 @@ namespace MonoMod.Cil
         /// <summary>
         /// Search backward and moves the cursor to the next sequence of instructions matching the corresponding predicates.
         /// </summary>
-        /// <returns>True if a match was found</returns>
+        /// <returns><see langword="true"/> if a matching instruction was found; <see langword="false"/> if one was not.</returns>
         public bool TryGotoPrev(MoveType moveType = MoveType.Before, params Func<Instruction, bool>[] predicates)
         {
             Helpers.ThrowIfArgumentNull(predicates);
@@ -384,9 +384,28 @@ namespace MonoMod.Cil
         }
 
         // manual overloads for params + default args
+
+        /// <summary>
+        /// Search forward and moves the cursor to the next sequence of instructions matching the corresponding predicates. See also <seealso cref="ILCursor.TryGotoNext(MoveType, Func{Instruction, bool}[])"/>
+        /// </summary>
+        /// <returns><see langword="this"/></returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no match is found</exception>
         public ILCursor GotoNext(params Func<Instruction, bool>[] predicates) => GotoNext(MoveType.Before, predicates);
+        /// <summary>
+        /// Search forward and moves the cursor to the next sequence of instructions matching the corresponding predicates.
+        /// </summary>
+        /// <returns><see langword="true"/> if a matching instruction was found; <see langword="false"/> if one was not.</returns>
         public bool TryGotoNext(params Func<Instruction, bool>[] predicates) => TryGotoNext(MoveType.Before, predicates);
+        /// <summary>
+        /// Search backward and moves the cursor to the next sequence of instructions matching the corresponding predicates. See also <seealso cref="TryGotoPrev(MoveType, Func{Instruction, bool}[])"/>
+        /// </summary>
+        /// <returns><see langword="this"/></returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no match is found</exception>
         public ILCursor GotoPrev(params Func<Instruction, bool>[] predicates) => GotoPrev(MoveType.Before, predicates);
+        /// <summary>
+        /// Search backward and moves the cursor to the next sequence of instructions matching the corresponding predicates.
+        /// </summary>
+        /// <returns><see langword="true"/> if a matching instruction was found; <see langword="false"/> if one was not.</returns>
         public bool TryGotoPrev(params Func<Instruction, bool>[] predicates) => TryGotoPrev(MoveType.Before, predicates);
 
         #endregion
