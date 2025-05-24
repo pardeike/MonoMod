@@ -84,7 +84,7 @@ jobs:
       shell: pwsh
       run: |
         $url = gh issue view ${{ inputs.issue_number }} --repo ${{ github.repository }} --json url | jq -r .url;
-        $content = gh issue view ${{ inputs.issue_number }} --repo ${{ github.repository }};
+        $content = gh issue view ${{ inputs.issue_number }} --repo ${{ github.repository }} | Out-String;
 
         ~/llmagent/LlmAgent -k $env:OPENROUTER_API_KEY -m ${{ inputs.model }} --control .github/issue_agent_control.yaml -v "ISSUE_URL=$url" -v "ISSUE_BODY=$content" -v "REPOSITORY=${{ github.repository }}";
 
