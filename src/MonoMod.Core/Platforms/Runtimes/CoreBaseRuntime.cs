@@ -35,7 +35,7 @@ namespace MonoMod.Core.Platforms.Runtimes
 
                 case 6:
                     // .NET 6.0.x
-                    return new Core60Runtime(system);
+                    return new Core60Runtime(system, arch);
 
                 case 7:
                     // .NET 7.0.x
