@@ -91,16 +91,96 @@ namespace MonoMod.Core.Platforms.Architectures
             if (PlatformDetection.Runtime is RuntimeKind.Framework or RuntimeKind.CoreCLR)
             {
                 return new BytePatternCollection(
-                    // BytePatternCollection cannot handle both a partial bit match and extracting the remainder as an address for the same byte.
-                    // Unfortunately LDR (immediate) has bits 4-0 as Rt and 23-5 as imm19 and the final address is computed as pc + imm19 * 4.
+                    // .NET 6 Support
                     //
-                    // Until BytePatternCollection is improved, we can sort of workaround the limitation by the nature of the alignments and
-                    // simply ignore the lower 3 bits. However that means the address needs LShift by 3 to compensate. Since we also need to multiply
-                    // by 4 for the proper address calculation, that equates to a total LShift of 5. To avoid any problems, the masks are set such
-                    // that the ignored 3 bits must always be 0 for the target address ldr instructions. For the other addresses can we can exactly match
-                    // on the interested bits because we aren't going to extract them, though allowing them deviate at all is probably silly.
-                    //
-                    //
+                    // StubPrecode
+                    new BytePattern(new AddressMeaning(AddressKind.Abs64), mustMatchAtStart: true,
+                        new byte[]
+                        {
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                        },
+                        new byte[]
+                        {
+                            0x89, 0x00, 0x00, 0x10, // adr x9, #16
+                            0x2a, 0x31, 0x40, 0xa9, // ldp x10,x12,[x9]      ; =m_pTarget,m_pMethodDesc
+                            0x40, 0x01, 0x1f, 0xd6, // br x10
+                              Bn,   Bn,   Bn,   Bn,
+                              Bd,   Bd,   Bd,   Bd,
+                              Bd,   Bd,   Bd,   Bd
+                        }
+                    ),
+                    // NDirectImportPrecode
+                    new BytePattern(new AddressMeaning(AddressKind.Abs64), mustMatchAtStart: true,
+                        new byte[]
+                        {
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                        },
+                        new byte[]
+                        {
+                            0x8b, 0x00, 0x00, 0x10, // adr x11, #16             ; Notice that x11 register is used to differentiate the stub from StubPrecode which uses x9
+                            0x6a, 0x31, 0x40, 0xa9, // ldp x10,x12,[x11]      ; =m_pTarget,m_pMethodDesc
+                            0x40, 0x01, 0x1f, 0xd6, // br  x10
+                              Bn,   Bn,   Bn,   Bn,
+                              Bd,   Bd,   Bd,   Bd,
+                              Bd,   Bd,   Bd,   Bd
+                        }
+                    ),
+                    // FixupPrecode 
+                    new BytePattern(new AddressMeaning(AddressKind.Abs64), mustMatchAtStart: true,
+                        new byte[]
+                        {
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                        },
+                        new byte[]
+                        {
+                            0x0c, 0x00, 0x00, 0x10, // adr x12, #0
+                            0x6b, 0x00, 0x00, 0x58, // ldr x11, [pc, #12]     ; =m_pTarget
+                            0x60, 0x01, 0x1f, 0xd6, // br  x11
+                              Bn,   Bn,   Bn,   Bn,
+                              Bd,   Bd,   Bd,   Bd,
+                              Bd,   Bd,   Bd,   Bd
+                        }
+                    ),
+                    // ThisPtrRetBufPrecode
+                    new BytePattern(new AddressMeaning(AddressKind.Abs64), mustMatchAtStart: true,
+                        new byte[]
+                        {
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00,
+                        },
+                        new byte[]
+                        {
+                            0x10, 0x00, 0x00, 0x91, // mov x16, x0
+                            0x20, 0x00, 0x00, 0x91, // mov x0, x1
+                            0x01, 0x02, 0x00, 0x91, // mov x1, x16
+                            0x70, 0x00, 0x00, 0x58, // ldr x16, [pc, #12]
+                            0x00, 0x02, 0x1f, 0xd6, // br  x16
+                              Bn,   Bn,   Bn,   Bn,
+                              Bd,   Bd,   Bd,   Bd,
+                              Bd,   Bd,   Bd,   Bd
+                        }
+                    ),
                     // .NET 8 Support
                     //
                     // #define STUB_PAGE_SIZE 16384
@@ -108,66 +188,66 @@ namespace MonoMod.Core.Platforms.Architectures
                     //
                     // FixupPrecodeCode
                     new BytePattern(
-                        new AddressMeaning(AddressKind.Rel32 | AddressKind.Indirect, 0, 5), mustMatchAtStart: true,
+                        new AddressMeaning(AddressKind.Rel64 | AddressKind.Constant | AddressKind.Indirect, 0, 0x4000), mustMatchAtStart: true,
                         new byte[]
                         {
-                            0xff, 0x00, 0x00, 0xff,
                             0xff, 0xff, 0xff, 0xff,
-                            0x1f, 0x00, 0x00, 0xff,
-                            0x1f, 0x00, 0x00, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
                             0xff, 0xff, 0xff, 0xff,
                         },
                         new byte[]
                         {
-                            0x0b,   Bd,   Bd, 0x58, // ldr x11, DATA_SLOT(FixupPrecode, Target)
+                            0x0b, 0x00, 0x02, 0x58, // ldr x11, DATA_SLOT(FixupPrecode, Target)
                             0x60, 0x01, 0x1f, 0xd6, // br x11
-                            0x0c,   Bn,   Bn, 0x58, // ldr x12, DATA_SLOT(FixupPrecode, MethodDesc)
-                            0x2b,   Bn,   Bn, 0x58, // ldr x11, DATA_SLOT(FixupPrecode, PrecodeFixupThunk)
+                            0x0c, 0x00, 0x02, 0x58, // ldr x12, DATA_SLOT(FixupPrecode, MethodDesc)
+                            0x2b, 0x00, 0x02, 0x58, // ldr x11, DATA_SLOT(FixupPrecode, PrecodeFixupThunk)
                             0x60, 0x01, 0x1f, 0xd6, // br x11
                         }
                     ),
-                    // StubPrecodeCode
+                    // FixupPrecodeCode ThePreStub entry point
                     new BytePattern(
-                        new AddressMeaning(AddressKind.Rel32 | AddressKind.Indirect, 0, 5), mustMatchAtStart: true,
+                        new AddressMeaning(AddressKind.PrecodeFixupThunkRel64 | AddressKind.Constant | AddressKind.Indirect, 0, 0x4000), mustMatchAtStart: true,
                         new byte[]
                         {
-                            0xff, 0x00, 0x00, 0xff,
-                            0x1f, 0x00, 0x00, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
                             0xff, 0xff, 0xff, 0xff,
                         },
                         new byte[]
                         {
-                            0x4a,   Bd,   Bd, 0x58, // ldr x10, DATA_SLOT(StubPrecode, Target)
-                            0xec,   Bn,   Bn, 0x58, // ldr x12, DATA_SLOT(StubPrecode, SecretParam)
-                            0x40, 0x01, 0x1f, 0xd6, // br x10
+                            0x0c, 0x00, 0x02, 0x58, // ldr x12, DATA_SLOT(FixupPrecode, MethodDesc)
+                            0x2b, 0x00, 0x02, 0x58, // ldr x11, DATA_SLOT(FixupPrecode, PrecodeFixupThunk)
+                            0x60, 0x01, 0x1f, 0xd6, // br x11
                         }
                     ),
                     // CallCountingStubCode
                     new BytePattern(
-                        new AddressMeaning(AddressKind.Rel32 | AddressKind.Indirect, 0, 5), mustMatchAtStart: true,
+                        new AddressMeaning(AddressKind.Rel64 | AddressKind.Constant | AddressKind.Indirect, 0, 0x4008), mustMatchAtStart: true,
                         new byte[]
                         {
-                            0xff, 0x00, 0x00, 0xff,
                             0xff, 0xff, 0xff, 0xff,
                             0xff, 0xff, 0xff, 0xff,
                             0xff, 0xff, 0xff, 0xff,
                             0xff, 0xff, 0xff, 0xff,
-                            0x1f, 0x00, 0x00, 0xff,
                             0xff, 0xff, 0xff, 0xff,
-                            0x1f, 0x00, 0x00, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
+                            0xff, 0xff, 0xff, 0xff,
                             0xff, 0xff, 0xff, 0xff,
                         },
                         new byte[]
                         {
-                            0x09,   Bd,   Bd, 0x58, // ldr  x9, DATA_SLOT(CallCountingStub, RemainingCallCountCell)
+                            0x09, 0x00, 0x02, 0x58, // ldr  x9, DATA_SLOT(CallCountingStub, RemainingCallCountCell)
                             0x2a, 0x01, 0x40, 0x79, // ldrh w10, [x9]
                             0x4a, 0x05, 0x00, 0x71, // subs w10, w10, #1
-                            0x2a, 0x01, 0x02, 0x79, // strh w10, [x9]
+                            0x2a, 0x01, 0x00, 0x79, // strh w10, [x9]
                             0x60, 0x00, 0x00, 0x54, // beq CountReachedZero
-                            0xa9,   Bn,   Bn, 0x58, // ldr  x9, DATA_SLOT(CallCountingStub, TargetForMethod)
+                            0xa9, 0xff, 0x01, 0x58, // ldr  x9, DATA_SLOT(CallCountingStub, TargetForMethod)
                             0x20, 0x01, 0x1f, 0xd6, // br   x9
                                                     // CountReachedZero:
-                            0xaa,   Bn,   Bn, 0x58, // ldr  x10, DATA_SLOT(CallCountingStub, TargetForThresholdReached)
+                            0xaa, 0xff, 0x01, 0x58, // ldr  x10, DATA_SLOT(CallCountingStub, TargetForThresholdReached)
                             0x40, 0x01, 0x1F, 0xD6, // br   x10
                         }
                     )
@@ -188,13 +268,13 @@ namespace MonoMod.Core.Platforms.Architectures
 
             public override int GetBytes(IntPtr from, IntPtr to, Span<byte> buffer, object? data, out IDisposable? allocHandle)
             {
-                // ldr x8, _target
-                buffer[0] = 0x48;
+                // ldr x9, _target
+                buffer[0] = 0x49;
                 buffer[1] = 0x00;
                 buffer[2] = 0x00;
                 buffer[3] = 0x58;
-                // br x8
-                buffer[4] = 0x00;
+                // br x9
+                buffer[4] = 0x20;
                 buffer[5] = 0x01;
                 buffer[6] = 0x1F;
                 buffer[7] = 0xD6;

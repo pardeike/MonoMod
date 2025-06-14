@@ -19,9 +19,9 @@ namespace MonoMod.Core.Utils
         public int RelativeToOffset { get; }
 
         /// <summary>
-        /// Gets the shift amount to adjust the address by with left shifts being positive and right shifts negative.
+        /// Gets the constant value of the address, if it is constant.
         /// </summary>
-        public int Shift { get; }
+        public ulong ConstantValue { get; }
 
         /// <summary>
         /// Constructs an <see cref="AddressMeaning"/> for the specified <see cref="AddressKind"/>.
@@ -61,11 +61,11 @@ namespace MonoMod.Core.Utils
         /// </summary>
         /// <param name="kind">The <see cref="AddressKind"/>.</param>
         /// <param name="relativeOffset">The offset relative to the match start.</param>
-        /// <param name="shift">The amount to left shift if positive, or right shift if negative the address by.</param>
+        /// <param name="constantValue">The constant value of the address if kind is <see cref="AddressKind.Constant"/>.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="kind"/> is invalid
         /// -OR- <paramref name="kind"/> is absolute
         /// -OR- <paramref name="relativeOffset"/> is less than zero.</exception>
-        public AddressMeaning(AddressKind kind, int relativeOffset, int shift)
+        public AddressMeaning(AddressKind kind, int relativeOffset, ulong constantValue)
         {
             kind.Validate();
             if (!kind.IsRelative())
@@ -74,12 +74,16 @@ namespace MonoMod.Core.Utils
                 throw new ArgumentOutOfRangeException(nameof(relativeOffset));
             Kind = kind;
             RelativeToOffset = relativeOffset;
-            Shift = shift;
+            ConstantValue = constantValue;
         }
 
-        private static unsafe nint DoProcessAddress(AddressKind kind, nint basePtr, int offset, ulong address, int shift)
+        private static unsafe nint DoProcessAddress(AddressKind kind, nint basePtr, int offset, ulong address, ulong constantValue)
         {
             nint addr;
+            if (kind.IsConstant())
+            {
+                address = constantValue;
+            }
             if (kind.IsAbsolute())
             {
                 addr = (nint)address;
@@ -89,16 +93,6 @@ namespace MonoMod.Core.Utils
                 var offs = kind.Is32Bit()
                     ? Unsafe.As<ulong, int>(ref address)
                     : Unsafe.As<ulong, long>(ref address);
-
-                if (shift < 0)
-                {
-                    offs >>= -shift;
-                }
-                else
-                {
-                    offs <<= shift;
-                }
-
                 addr = (nint)(basePtr + offset + offs);
             }
             if (kind.IsIndirect())
@@ -117,7 +111,7 @@ namespace MonoMod.Core.Utils
         /// <returns>The resolved target address.</returns>
         public nint ProcessAddress(nint basePtr, int offset, ulong address)
         {
-            return DoProcessAddress(Kind, basePtr, offset + RelativeToOffset, address, Shift);
+            return DoProcessAddress(Kind, basePtr, offset + RelativeToOffset, address, ConstantValue);
         }
 
         /// <inheritdoc/>
@@ -131,17 +125,17 @@ namespace MonoMod.Core.Utils
         {
             return Kind == other.Kind &&
                    RelativeToOffset == other.RelativeToOffset &&
-                   Shift == other.Shift;
+                   ConstantValue == other.ConstantValue;
         }
 
         // Force the use of DebugFormatter, because we might be patching DefaultInterpolatedStringHandler
         /// <inheritdoc/>
-        public override string ToString() => DebugFormatter.Format($"AddressMeaning({Kind.FastToString()}, offset: {RelativeToOffset}, shift: {Shift})");
+        public override string ToString() => DebugFormatter.Format($"AddressMeaning({Kind.FastToString()}, offset: {RelativeToOffset}, shift: {ConstantValue})");
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(Kind, RelativeToOffset, Shift);
+            return HashCode.Combine(Kind, RelativeToOffset, ConstantValue);
         }
 
         /// <summary>
