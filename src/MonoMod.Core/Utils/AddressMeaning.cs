@@ -77,7 +77,7 @@ namespace MonoMod.Core.Utils
             ConstantValue = constantValue;
         }
 
-        private static unsafe nint DoProcessAddress(AddressKind kind, nint basePtr, int offset, ulong address, ulong constantValue)
+        private static unsafe nint DoProcessAddress(AddressKind kind, nint basePtr, int offset, ulong constantValue, ulong address)
         {
             nint addr;
             if (kind.IsConstant())
@@ -111,7 +111,7 @@ namespace MonoMod.Core.Utils
         /// <returns>The resolved target address.</returns>
         public nint ProcessAddress(nint basePtr, int offset, ulong address)
         {
-            return DoProcessAddress(Kind, basePtr, offset + RelativeToOffset, address, ConstantValue);
+            return DoProcessAddress(Kind, basePtr, offset + RelativeToOffset, ConstantValue, address);
         }
 
         /// <inheritdoc/>
