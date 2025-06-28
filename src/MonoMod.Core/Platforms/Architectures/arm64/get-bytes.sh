@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Utility script to assemble a .S and dump the main text section to hex bytes for export to C#
 name="$1"
 groupSize=4
 

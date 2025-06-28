@@ -1,4 +1,5 @@
 // ./get-bytes.sh detour
+// detour thunk
 
 .text
 .global _main

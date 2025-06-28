@@ -252,31 +252,7 @@ namespace MonoMod.Core.Platforms.Runtimes
                             ref var wrapper = ref *(ICorJitInfoWrapper*)corJitWrapper.BaseAddress;
                             var rwEntry = wrapper[ICorJitInfoWrapper.HotCodeRW];
 
-                            // This is the top level JIT entry point, do our custom stuff
-                            RuntimeTypeHandle[]? genericClassArgs = null;
-                            RuntimeTypeHandle[]? genericMethodArgs = null;
-
-                            if (methodInfo->args.sigInst.classInst != null)
-                            {
-                                genericClassArgs = new RuntimeTypeHandle[methodInfo->args.sigInst.classInstCount];
-                                for (var i = 0; i < genericClassArgs.Length; i++)
-                                {
-                                    genericClassArgs[i] = JitHookHelpers.GetTypeFromNativeHandle(methodInfo->args.sigInst.classInst[i]).TypeHandle;
-                                }
-                            }
-                            if (methodInfo->args.sigInst.methInst != null)
-                            {
-                                genericMethodArgs = new RuntimeTypeHandle[methodInfo->args.sigInst.methInstCount];
-                                for (var i = 0; i < genericMethodArgs.Length; i++)
-                                {
-                                    genericMethodArgs[i] = JitHookHelpers.GetTypeFromNativeHandle(methodInfo->args.sigInst.methInst[i]).TypeHandle;
-                                }
-                            }
-
-                            var declaringType = JitHookHelpers.GetDeclaringTypeOfMethodHandle(methodInfo->ftn).TypeHandle;
-                            var method = JitHookHelpers.CreateHandleForHandlePointer(methodInfo->ftn);
-
-                            Runtime.OnMethodCompiledCore(declaringType, method, genericClassArgs, genericMethodArgs, (IntPtr)(*nativeEntry), rwEntry, *nativeSizeOfCode);
+                            Runtime.CompileMethodHookPostCommon(methodInfo, nativeEntry, nativeSizeOfCode, rwEntry);
                         }
                         catch
                         {
@@ -294,6 +270,35 @@ namespace MonoMod.Core.Platforms.Runtimes
                     MarshalEx.SetLastPInvokeError(lastError);
                 }
             }
+        }
+
+        private unsafe void CompileMethodHookPostCommon(V21.CORINFO_METHOD_INFO* methodInfo, byte** nativeEntry, uint* nativeSizeOfCode, IntPtr rwEntry)
+        {
+            // This is the top level JIT entry point, do our custom stuff
+            RuntimeTypeHandle[]? genericClassArgs = null;
+            RuntimeTypeHandle[]? genericMethodArgs = null;
+
+            if (methodInfo->args.sigInst.classInst != null)
+            {
+                genericClassArgs = new RuntimeTypeHandle[methodInfo->args.sigInst.classInstCount];
+                for (var i = 0; i < genericClassArgs.Length; i++)
+                {
+                    genericClassArgs[i] = JitHookHelpers.GetTypeFromNativeHandle(methodInfo->args.sigInst.classInst[i]).TypeHandle;
+                }
+            }
+            if (methodInfo->args.sigInst.methInst != null)
+            {
+                genericMethodArgs = new RuntimeTypeHandle[methodInfo->args.sigInst.methInstCount];
+                for (var i = 0; i < genericMethodArgs.Length; i++)
+                {
+                    genericMethodArgs[i] = JitHookHelpers.GetTypeFromNativeHandle(methodInfo->args.sigInst.methInst[i]).TypeHandle;
+                }
+            }
+
+            var declaringType = JitHookHelpers.GetDeclaringTypeOfMethodHandle(methodInfo->ftn).TypeHandle;
+            var method = JitHookHelpers.CreateHandleForHandlePointer(methodInfo->ftn);
+
+            OnMethodCompiledCore(declaringType, method, genericClassArgs, genericMethodArgs, (IntPtr)(*nativeEntry), rwEntry, *nativeSizeOfCode);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -370,31 +375,7 @@ namespace MonoMod.Core.Platforms.Runtimes
                         }
                     }
 
-                    // This is the top level JIT entry point, do our custom stuff
-                    RuntimeTypeHandle[]? genericClassArgs = null;
-                    RuntimeTypeHandle[]? genericMethodArgs = null;
-
-                    if (methodInfo->args.sigInst.classInst != null)
-                    {
-                        genericClassArgs = new RuntimeTypeHandle[methodInfo->args.sigInst.classInstCount];
-                        for (var i = 0; i < genericClassArgs.Length; i++)
-                        {
-                            genericClassArgs[i] = JitHookHelpers.GetTypeFromNativeHandle(methodInfo->args.sigInst.classInst[i]).TypeHandle;
-                        }
-                    }
-                    if (methodInfo->args.sigInst.methInst != null)
-                    {
-                        genericMethodArgs = new RuntimeTypeHandle[methodInfo->args.sigInst.methInstCount];
-                        for (var i = 0; i < genericMethodArgs.Length; i++)
-                        {
-                            genericMethodArgs[i] = JitHookHelpers.GetTypeFromNativeHandle(methodInfo->args.sigInst.methInst[i]).TypeHandle;
-                        }
-                    }
-
-                    var declaringType = JitHookHelpers.GetDeclaringTypeOfMethodHandle(methodInfo->ftn).TypeHandle;
-                    var method = JitHookHelpers.CreateHandleForHandlePointer(methodInfo->ftn);
-
-                    Runtime.OnMethodCompiledCore(declaringType, method, genericClassArgs, genericMethodArgs, (IntPtr)(*nativeEntry), pArgs->hotCodeBlockRW, *nativeSizeOfCode);
+                    Runtime.CompileMethodHookPostCommon(methodInfo, nativeEntry, nativeSizeOfCode, pArgs->hotCodeBlockRW);
                 }
                 catch
                 {

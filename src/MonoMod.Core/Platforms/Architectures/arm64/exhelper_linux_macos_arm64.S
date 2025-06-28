@@ -1,19 +1,11 @@
 // Linux: clang exhelper_linux_macos_arm64.S -o exhelper_linux_arm64.so    -shared -Wl,-x,--eh-frame-hdr,-z,now,-z,noexecstack,-z,noseparate-code,-z,norelro,--build-id=none -nodefaultlibs -nostdlib -s -fuse-ld=lld
 // MacOS: clang exhelper_linux_macos_arm64.S -o exhelper_macos_arm64.dylib -shared -Wl,-x -mmacosx-version-min=12
 
-#include "asm.inc"
+#include "asm.i"
 
-.set _UA_SEARCH_PHASE, 0
-.set _UA_CLEANUP_PHASE, 1
-.set _UA_HANDLER_FRAME, 2
-.set _UA_FORCE_UNWIND, 3
-
-.set _URC_HANDLER_FOUND, 6
-.set _URC_INSTALL_CONTEXT, 7
-.set _URC_CONTINUE_UNWIND, 8
-
-.set DW_REG_x0, 0
-
+//
+// EH Support Data - Language Specific Data Area and Personality refs
+//
 
 .data
 .p2align 3
@@ -23,6 +15,16 @@ _LSDA_none:
 
 _LSDA_mton:
     .word LOCAL_LABEL(emtn_landingpad) - _LSDA_mton
+
+#if !defined(__APPLE__)
+_ref_personality:
+    .quad _personality
+#endif
+
+
+//
+// TLS
+//
 
 #if defined(__APPLE__)
 .tbss _cur_ex_ptr$tlv$init, 4, 2
@@ -34,17 +36,31 @@ _cur_ex_ptr:
     .quad 0
     .quad _cur_ex_ptr$tlv$init
 #else
-_ref_personality:
-    .xword _personality
-
 tlskey:
     .space 8
 
 .section .init_array,"aw"
 .dc.a _eh_init_tlskey
+
+.text
+_eh_init_tlskey:
+    stp x29, x30, [sp, #-16]!
+    mov x29, sp
+    LOAD_INTERNAL x0, tlskey
+    LOAD_EXTERNAL x1, free
+    bl EXTERNAL_C_FUNC(pthread_key_create)
+    cbnz x0, LOCAL_LABEL(eit_error)
+LOCAL_LABEL(eit_ret):
+    ldp x29, x30, [sp], #16
+    ret
+LOCAL_LABEL(eit_error):
+    b LOCAL_LABEL(eit_ret)
 #endif
 
 
+//
+// Main exports
+//
 .text
 .global C_FUNC(eh_get_exception_ptr), C_FUNC(eh_has_exception), C_FUNC(eh_managed_to_native), C_FUNC(eh_native_to_managed)
 
@@ -121,20 +137,6 @@ LOCAL_LABEL(egep_init):
 #endif
     .cfi_endproc
 
-#if !defined(__APPLE__)
-_eh_init_tlskey:
-    stp x29, x30, [sp, #-16]!
-    mov x29, sp
-    LOAD_INTERNAL x0, tlskey
-    LOAD_EXTERNAL x1, free
-    bl EXTERNAL_C_FUNC(pthread_key_create)
-    cbnz x0, LOCAL_LABEL(eit_error)
-LOCAL_LABEL(eit_ret):
-    ldp x29, x30, [sp], #16
-    ret
-LOCAL_LABEL(eit_error):
-    b LOCAL_LABEL(eit_ret)
-#endif
 
 C_FUNC(eh_has_exception):
     .cfi_startproc
@@ -154,6 +156,7 @@ C_FUNC(eh_has_exception):
     .cfi_def_cfa_offset 0
     ret
     .cfi_endproc
+
 
 C_FUNC(eh_managed_to_native):
     .cfi_startproc
@@ -183,6 +186,7 @@ LOCAL_LABEL(emtn_landingpad):
     .cfi_def_cfa_offset 0
     ret
     .cfi_endproc
+
 
 C_FUNC(eh_native_to_managed):
     .cfi_startproc
@@ -221,6 +225,7 @@ LOCAL_LABEL(entm_do_rethrow):
     bl EXTERNAL_C_FUNC(_Unwind_RaiseException)
     brk #1
     .cfi_endproc
+
 
 _personality:
     .cfi_startproc
@@ -277,43 +282,3 @@ LOCAL_LABEL(p_ret):
     .cfi_def_cfa_offset 0
     ret
     .cfi_endproc
-
-#if defined(__APPLE__)
-C_FUNC(eh_jit_memcpy):
-    .cfi_startproc
-    LSDA(_LSDA_none)
-    stp x22, x21, [sp, #-48]!
-    stp x20, x19, [sp, #16]
-    stp x29, x30, [sp, #32]
-    .cfi_def_cfa_offset 48
-    .cfi_offset x30, -8
-    .cfi_offset x29, -16
-    .cfi_offset x19, -24
-    .cfi_offset x20, -32
-    .cfi_offset x21, -40
-    .cfi_offset x22, -48
-    add x29, sp, #32
-    mov x20, x0
-    mov x21, x1
-    mov x22, x2
-    mov w0, #0
-    bl EXTERNAL_C_FUNC(pthread_jit_write_protect_np)
-    mov x0, x20
-    mov x1, x21
-    mov x2, x22
-    bl EXTERNAL_C_FUNC(memcpy)
-    mov w0, #1
-    bl EXTERNAL_C_FUNC(pthread_jit_write_protect_np)
-    ldp x29, x30, [sp, #32]
-    ldp x20, x19, [sp, #16]
-    ldp x22, x21, [sp], #48
-    .cfi_restore x30
-    .cfi_restore x29
-    .cfi_restore x19
-    .cfi_restore x20
-    .cfi_restore x21
-    .cfi_restore x22
-    .cfi_def_cfa_offset 0
-    ret
-    .cfi_endproc
-#endif

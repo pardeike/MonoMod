@@ -1,4 +1,5 @@
 ﻿// ./get-bytes.sh eh
+// exception handler thunk aka SpecialEntryStub
 
 .text
 .global _main

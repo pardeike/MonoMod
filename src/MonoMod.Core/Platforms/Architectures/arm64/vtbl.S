@@ -1,4 +1,5 @@
 // ./get-bytes.sh vtbl
+// vtable proxy stub
 
 .text
 .global _main
