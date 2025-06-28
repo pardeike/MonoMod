@@ -302,7 +302,7 @@ namespace MonoMod.Core.Platforms.Runtimes
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct NativeJitHookConfig
+        protected struct NativeJitHookConfig
         {
             public IntPtr compileMethod;
             public IntPtr compileMethodHook;
