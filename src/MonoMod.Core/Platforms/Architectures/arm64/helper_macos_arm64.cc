@@ -1,4 +1,10 @@
 // clang -O3 -dynamiclib helper_macos_arm64.cc -o helper_macos_arm64.dylib -std=c++20 -lc++ -Wall -mmacosx-version-min=11
+//
+// DISABLE_JWP_DETECTION=1      Disables detection of the current thread's write protection via a system register and falls back to the suboptimal
+//                              path where we assume it must always be toggled during patching and use a separate thread for managed hook dispatch
+// 
+// FORCE_NATIVE_JIT_HOOK_USE=1  Forces the use of the native jit hooks even if write protection isn't supported on the platform.
+//
 
 #include <cstdint>
 #include <thread>
@@ -171,6 +177,11 @@ namespace JitHooks60
 
 extern "C" void* mmch_jit_hook_config(int runtimeMajMin)
 {
+#if !defined(FORCE_NATIVE_JIT_HOOK_USE)
+    if (!pthread_jit_write_protect_supported_np())
+        return nullptr;
+#endif
+
     switch (runtimeMajMin)
     {
     case 60:

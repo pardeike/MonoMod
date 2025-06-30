@@ -578,14 +578,8 @@ namespace MonoMod.Core.Platforms.Systems
         public unsafe IntPtr GetNativeJitHookConfig(int runtimeMajMin)
         {
             if (PlatformDetection.Architecture == ArchitectureKind.Arm64)
-            {
-                var hookConfig = MacOSArm64Helper.Instance?.GetJitHookConfig(runtimeMajMin) ?? IntPtr.Zero;
-
-                // Native jit hooks are required on macos arm64!
-                Helpers.Assert(hookConfig != IntPtr.Zero);
-                return hookConfig;
-            }
-
+                return MacOSArm64Helper.Instance?.GetJitHookConfig(runtimeMajMin) ?? IntPtr.Zero;
+            
             return IntPtr.Zero;
         }
     }
