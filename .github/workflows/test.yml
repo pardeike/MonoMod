@@ -148,5 +148,6 @@ jobs:
       with:
         name: test-dumps ${{ fromJSON(inputs.matrix).title }}
         retention-days: 1
+        if-no-files-found: ignore
         path: |
           ${{ env.DUMPS_PATH }}*
