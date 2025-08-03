@@ -41,7 +41,7 @@ jobs:
     steps:    
     - name: Checkout
       uses: actions/checkout@v4
-      if: ${{ fromJSON(inputs.matrix).dotnet.needsRestore || fromJSON(inputs.matrix).dotnet.isMono }}
+      #if: ${{ fromJSON(inputs.matrix).dotnet.needsRestore || fromJSON(inputs.matrix).dotnet.isMono }}
       with:
         lfs: true
         submodules: recursive
