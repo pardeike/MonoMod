@@ -121,7 +121,9 @@ jobs:
     - name: Run tests
       if: ${{ ! fromJSON(inputs.matrix).dotnet.isMono && ! fromJSON(inputs.matrix).dotnet.pgo }}
       run: |
-        dotnet test -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
+        dotnet test `
+          --blame-crash-dump-type full --blame-hang-timeout 5m --blame-hang-dump-type full `
+          -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
           -l:"trx;LogFileName=$($env:LOG_FILE_NAME).trx" release_${{ fromJSON(inputs.matrix).dotnet.tfm }}/MonoMod.UnitTest.dll
 
     - name: Run tests (PGO)
@@ -131,7 +133,9 @@ jobs:
         DOTNET_TC_QuicJitForLoops: ${{ fromJSON(inputs.matrix).usePgo && 1 || 0 }}
         DOTNET_TieredPGO: ${{ fromJSON(inputs.matrix).usePgo && 1 || 0 }}
       run: |
-        dotnet test -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
+        dotnet test `
+          --blame-crash-dump-type full --blame-hang-timeout 5m --blame-hang-dump-type full `
+          -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
           -l:"trx;LogFileName=$($env:LOG_FILE_NAME).trx" release_${{ fromJSON(inputs.matrix).dotnet.tfm }}/MonoMod.UnitTest.dll
           
     - name: Run tests (Mono)
@@ -166,3 +170,4 @@ jobs:
         if-no-files-found: ignore
         path: |
           ${{ env.DUMPS_PATH }}*
+          **/*.dmp
