@@ -21,6 +21,9 @@ on:
       upload-tests:
         type: boolean
         default: false
+      package-base-name:
+        type: string
+        default: ""
   
 defaults:
   run:
@@ -38,8 +41,9 @@ jobs:
     name: Build
     env:
       LOG_FILE_NAME: testresults.${{ inputs.os }}.auxtests.trx
-      VersionSuffix: ${{ !inputs.no-suffix && format('daily.{0}', inputs.version) }}
+      VersionSuffix: ${{ !inputs.no-suffix && inputs.version }}
       DoNotAddSuffix: ${{ inputs.no-suffix && '1' }}
+      BuildPackageBaseName: ${{ inputs.package-base-name }}
     steps:
     - name: Configure git
       run: |
@@ -58,7 +62,6 @@ jobs:
       with:
         global-json: global.json
         
-    # NOTE: manual package caching
     - name: Cache restored NuGet packages
       uses: actions/cache@v4
       with:

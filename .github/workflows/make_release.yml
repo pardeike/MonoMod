@@ -1,10 +1,26 @@
-name: Build and Test
+name: Make Release
+run-name: ${{ inputs.dryrun && '(Dry Run) ' || '' }}Make ${{ inputs.prerelease && format('prerelease with suffix ''{0}''', inputs.prerelease-str) || 'release' }} on ${{ github.ref_name }}
+
 on:
-  push:
-    branches-ignore:
-    - 'ai/**'
-  pull_request:
-  
+  workflow_dispatch:
+    inputs:
+      dryrun:
+        description: Dry Run
+        type: boolean
+        default: true
+      package-base-name:
+        description: The base name of the package to use instead of MonoMod
+        type: string
+        default: ""
+      prerelease:
+        description: This is a prerelease
+        type: boolean
+        default: false
+      prerelease-str:
+        description: Prerelease suffix
+        type: string
+        default: ""
+       
 defaults:
   run:
     shell: pwsh
@@ -14,31 +30,19 @@ env:
   DOTNET_NOLOGO: true
   NUGET_PACKAGES: ${{github.workspace}}/artifacts/pkg
   RestoreLockedMode: true
-  
-# If new commits are pushed, don't bother finishing the current run.
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }} 
   cancel-in-progress: true
 
-# We'll have a job for building (that runs on x64 machines only, one for each OS to make sure it actually builds)
-# Then, we'll take the result from one of those (probaly Linux) and distribute build artifacts to testers to run
-# a load of tests. This will (eventually) include ARM runners, where possible.
 jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
     outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
       ver: ${{ steps.computever.outputs.ver }}
       matrix: ${{ steps.compute-matrix.outputs.matrix }}
     steps:
-    - name: Check if this run should skip
-      id: skip_check
-      uses: fkirc/skip-duplicate-actions@v5
-      with:
-        cancel_others: true
-        concurrent_skipping: same_content_newer
-
     - name: Upload event file
       uses: actions/upload-artifact@v4
       with:
@@ -48,7 +52,7 @@ jobs:
 
     - name: Compute Version
       id: computever
-      run: echo "ver=$(Get-Date -Format y.M.d).${{ github.run_number }}.${{ github.run_attempt }}" >> $env:GITHUB_OUTPUT
+      run: echo "ver=$(Get-Date -Format y.M.d).${{ github.run_number }}.${{ github.run_attempt }}-RELEASE${{ inputs.prerelease && format('-{0}', inputs.prerelease-str) }}" >> $env:GITHUB_OUTPUT
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -59,14 +63,12 @@ jobs:
     # TODO: maybe we can eventually use package locks for package caching?
     
     - name: Install .NET SDK
-      if: steps.skip_check.outputs.should_skip != 'true'
       uses: nike4613/install-dotnet@6625f6cf2b076b088eee77a005f5f226e89aa580
       with:
         global-json: global.json
         
     # NOTE: manual package caching
     - name: Cache restored NuGet packages
-      if: steps.skip_check.outputs.should_skip != 'true'
       uses: actions/cache@v4
       with:
         path: ${{ env.NUGET_PACKAGES }}
@@ -74,46 +76,25 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-v2-${{ hashFiles('**/packages.lock.json') }}
 
     - name: Compute test matrix
-      if: steps.skip_check.outputs.should_skip != 'true'
       id: compute-matrix
       run: dotnet run --project ./build/gen-test-matrix/gen-test-matrix.csproj -c Release -- "${{ github.repository_owner }}" $env:GITHUB_OUTPUT matrix
   
   build-testassets:
     needs: setup
-    if: needs.setup.outputs.should_skip != 'true'
     name: 'Build #${{ needs.setup.outputs.ver }} (Linux)'
     uses: ./.github/workflows/build.yml
     with:
       os: ubuntu-latest
       osname: Linux
-      version: daily.${{ needs.setup.outputs.ver }}
+      version: ${{ inputs.prerelease-str }}
+      no-suffix: ${{ !inputs.prerelease }}
+      package-base-name: ${{ inputs.package-base-name }}
       upload-packages: true
       upload-tests: true
-
-  build:
-    needs: setup
-    if: needs.setup.outputs.should_skip != 'true'
-    strategy:
-      matrix:
-        include:
-        - os: windows-latest
-          name: Windows
-        - os: macos-latest
-          name: MacOS
-          
-    name: 'Build #${{ needs.setup.outputs.ver }} (${{ matrix.name }})'
-    uses: ./.github/workflows/build.yml
-    with:
-      os: ${{ matrix.os }}
-      osname: ${{ matrix.name }}
-      version: daily.${{ needs.setup.outputs.ver }}
-      upload-packages: false
-      upload-tests: false
 
   wait-for-containers:
     name: Wait for Docker containers
     needs: setup
-    if: needs.setup.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Wait for container builds
@@ -155,7 +136,6 @@ jobs:
 
   test:
     needs: [setup, build-testassets, wait-for-containers]
-    if: needs.setup.outputs.should_skip != 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
@@ -164,10 +144,70 @@ jobs:
     with:
       matrix: ${{ toJSON(matrix) }}
       
-  upload:
-    needs: [setup, build-testassets]
-    if: github.ref_name == 'reorganize'
-    name: Upload Packages
+  upload-github:
+    needs: [setup, build-testassets, test]
+    if: 'always() && !inputs.dryrun' # always try to push GitHub packages, even if tests fail
+    name: Upload Packages (GitHub)
     uses: ./.github/workflows/upload-packages.yml
     with:
-      workflow-id: ${{ needs.setup.outputs.should_skip == 'true' && fromJSON(needs.setup.outputs.skipped_by).workflowId || github.run_id }}
+      workflow-id: ${{ github.run_id }}
+
+  upload-nuget:
+    needs: [setup, build-testassets, test]
+    if: '!inputs.dryrun'
+    name: Upload Packages (NuGet)
+    uses: ./.github/workflows/upload-packages.yml
+    with:
+      workflow-id: ${{ github.run_id }}
+      nuget-url: nuget.org
+    secrets:
+      nuget-key: ${{ secrets.NUGET_PUSH_KEY }}
+
+  bump-ver:
+    name: Bump versions
+    needs: [setup, build-testassets]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+        
+    - name: Cache restored NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-v2-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: ${{ runner.os }}-nuget-setup-v2-${{ hashFiles('build/gen-test-matrix/packages.lock.json') }}
+    
+    - name: Install .NET SDK
+      if: '!inputs.prerelease'
+      uses: nike4613/install-dotnet@533307d1c90c37993c8ef1397388bc9783e7b87c
+      with:
+        global-json: global.json
+
+    # then, bump the version (if appropriate)
+    - name: Update version
+      if: '!inputs.prerelease'
+      run: ./tools/bump_version.ps1 -BumpVersion Patch # always bump patch here; if we ever need to do a different bump, it can be done per-PR
+
+    - name: Update restore
+      if: '!inputs.prerelease'
+      run: dotnet restore -noAutoRsp --force-evaluate
+    
+    - name: Update compat suppressions
+      if: '!inputs.prerelease'
+      run: |
+        dotnet pack -c Release -clp:NoSummary -noAutoRsp -p:RunAnalyzers=false -p:ApiCompatGenerateSuppressionFile=true
+
+    - name: Commit updated version
+      if: '!inputs.prerelease'
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: "[BOT]: Bump version after ${{ needs.setup.outputs.ver }}"
+        committer_name: GitHub Actions
+        committer_email: 41898282+github-actions[bot]@users.noreply.github.com
+        push: ${{ !inputs.dryrun }}
+        pathspec_error_handling: exitAtEnd

@@ -7,7 +7,7 @@ process handle -s true -p true -n true SIGXCPU SIGABRT SIGILL SIGBUS
 
 # set some breakpoints for mono
 # if mono_handle_native_crash is invoked, break and create a dump immediately
-breakpoint set -b mono_handle_native_crash -H -K true -G true -C sdmp
+breakpoint set -b mono_handle_native_crash -K true -G true -C sdmp
 
 # --- SETUP DONE --- 
 run
