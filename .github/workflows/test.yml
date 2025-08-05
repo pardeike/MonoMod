@@ -41,7 +41,7 @@ jobs:
     steps:    
     - name: Checkout
       uses: actions/checkout@v4
-      #if: ${{ fromJSON(inputs.matrix).dotnet.needsRestore || fromJSON(inputs.matrix).dotnet.isMono }}
+      if: ${{ fromJSON(inputs.matrix).dotnet.needsRestore || fromJSON(inputs.matrix).dotnet.isMono }}
       with:
         lfs: true
         submodules: recursive
@@ -92,7 +92,6 @@ jobs:
       env:
         INPUT_JOB: ${{ inputs.matrix }}
       run: |
-        #./.github/setup-mono.ps1 $env:INPUT_JOB $env:GITHUB_OUTPUT $env:GITHUB_ENV ${{ runner.os }}
         dotnet run --project ./build/setup-mono/setup-mono.csproj -- $env:INPUT_JOB $env:GITHUB_OUTPUT $env:GITHUB_ENV ${{ runner.os }}
 
     - name: Print SDK info
@@ -106,7 +105,7 @@ jobs:
     - name: Run tests
       if: ${{ ! fromJSON(inputs.matrix).dotnet.isMono && ! fromJSON(inputs.matrix).dotnet.pgo }}
       run: |
-        ./.github/workflows/run-with-dumps.ps1 -- dotnet test -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
+        dotnet test -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
           -l:"trx;LogFileName=$($env:LOG_FILE_NAME).trx" release_${{ fromJSON(inputs.matrix).dotnet.tfm }}/MonoMod.UnitTest.dll
 
     - name: Run tests (PGO)
@@ -116,7 +115,7 @@ jobs:
         DOTNET_TC_QuicJitForLoops: ${{ fromJSON(inputs.matrix).usePgo && 1 || 0 }}
         DOTNET_TieredPGO: ${{ fromJSON(inputs.matrix).usePgo && 1 || 0 }}
       run: |
-        ./.github/workflows/run-with-dumps.ps1 -- dotnet test -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
+        dotnet test -f ${{ fromJSON(inputs.matrix).dotnet.tfm }} -a ${{ fromJSON(inputs.matrix).arch }} `
           -l:"trx;LogFileName=$($env:LOG_FILE_NAME).trx" release_${{ fromJSON(inputs.matrix).dotnet.tfm }}/MonoMod.UnitTest.dll
           
     - name: Run tests (Mono)
