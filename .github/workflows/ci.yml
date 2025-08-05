@@ -94,11 +94,10 @@ jobs:
     if: needs.setup.outputs.should_skip != 'true'
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
         include:
         - os: windows-latest
           name: Windows
-        - os: macos-13
+        - os: macos-latest
           name: MacOS
           
     name: 'Build #${{ needs.setup.outputs.ver }} (${{ matrix.name }})'
