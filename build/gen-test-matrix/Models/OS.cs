@@ -101,6 +101,7 @@ internal sealed record OS : Enableable
             UnityDllName = "monobdwgc-2.0", // TODO: is this correct?
             DllPrefix = "lib",
             DllSuffix = ".so",
+            Enabled = false, // TODO: enable when arm container building is sane
 
             Arch = [
                 new() { RidName = "arm64", UnityName = null, IsRunnerArch = true },
@@ -115,6 +116,7 @@ internal sealed record OS : Enableable
             UnityDllName = "monobdwgc-2.0", // TODO: is this correct?
             DllPrefix = "lib",
             DllSuffix = ".dylib",
+            Enabled = false, // TODO: enable when arm container building is sane
 
             Arch = [
                 new() { RidName = "x64", UnityName = "macos_x64", IsRunnerArch = true },
