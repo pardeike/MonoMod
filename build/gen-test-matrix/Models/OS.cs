@@ -80,8 +80,8 @@ internal sealed record OS : Enableable
         {
             Name = "Linux ARM64",
             Runner = "ubuntu-24.04-arm",
-            UseContainer = true,
-            HasSystemMono = true,
+            //UseContainer = true,
+            //HasSystemMono = true,
             RidName = "linux",
             UnityDllName = "monobdwgc-2.0", // TODO: is this correct?
             DllPrefix = "lib",
@@ -116,7 +116,6 @@ internal sealed record OS : Enableable
             UnityDllName = "monobdwgc-2.0", // TODO: is this correct?
             DllPrefix = "lib",
             DllSuffix = ".dylib",
-            Enabled = false, // TODO: enable when arm container building is sane
 
             Arch = [
                 new() { RidName = "x64", UnityName = "macos_x64", IsRunnerArch = true },
