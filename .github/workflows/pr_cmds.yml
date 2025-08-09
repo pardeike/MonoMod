@@ -27,7 +27,7 @@ jobs:
       
     steps:
     - name: Check command '/version'
-      uses: github/command@v4
+      uses: github/command@v2
       id: cmdversion
       with:
         command: /version
@@ -40,7 +40,7 @@ jobs:
         skip_completing: true
 
     - name: Check command '/lockfile'
-      uses: github/command@v4
+      uses: github/command@v2
       id: cmdlockfile
       with:
         command: /lockfile
