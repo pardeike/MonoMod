@@ -152,9 +152,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -248,9 +248,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -364,9 +364,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -449,9 +449,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -534,9 +534,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -619,9 +619,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -704,9 +704,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",

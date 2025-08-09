@@ -160,9 +160,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -215,7 +215,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )"
         }
@@ -264,9 +264,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -339,7 +339,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )",
           "System.Reflection.Emit.ILGeneration": "[4.7.0, )",
@@ -390,9 +390,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -434,7 +434,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )"
         }
@@ -483,9 +483,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -527,7 +527,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )"
         }
@@ -576,9 +576,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -620,7 +620,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )"
         }
@@ -669,9 +669,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -713,7 +713,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )"
         }
@@ -762,9 +762,9 @@
       },
       "Mono.Cecil": {
         "type": "Direct",
-        "requested": "[0.11.5, )",
-        "resolved": "0.11.5",
-        "contentHash": "fxfX+0JGTZ8YQeu1MYjbBiK2CYTSzDyEeIixt+yqKKTn7FW8rv7JMY70qevup4ZJfD7Kk/VG/jDzQQTpfch87g=="
+        "requested": "[0.11.6, )",
+        "resolved": "0.11.6",
+        "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
       "MonoMod.Backports": {
         "type": "Direct",
@@ -806,7 +806,7 @@
       "monomod.utils": {
         "type": "Project",
         "dependencies": {
-          "Mono.Cecil": "[0.11.5, )",
+          "Mono.Cecil": "[0.11.6, )",
           "MonoMod.Backports": "[1.1.2, )",
           "MonoMod.ILHelpers": "[1.1.0, )"
         }
