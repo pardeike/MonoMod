@@ -533,6 +533,32 @@ namespace MonoMod.Core.Platforms.Systems
 
         private static ReadOnlySpan<byte> NEHTempl => "/tmp/mm-exhelper.dylib.XXXXXX"u8;
 
+        private sealed class MacOSNativeLibDrop : PosixNativeLibraryDrop
+        {
+            public static readonly MacOSNativeLibDrop Instance = new();
+
+            protected override void CloseFileDescriptor(nint fd)
+            {
+                _ = OSX.Close((int)fd);
+            }
+
+            protected override unsafe nint Mkstemp(Span<byte> template)
+            {
+                int fd;
+                fixed (byte* pTmpl = template)
+                    fd = MkSTemp(pTmpl);
+
+                if (fd == -1)
+                {
+                    var lastError = OSX.Errno;
+                    var ex = new Win32Exception(lastError);
+                    MMDbgLog.Error($"Could not create temp file: {lastError} {ex}");
+                    throw ex;
+                }
+                return fd;
+            }
+        }
+
         private unsafe PosixExceptionHelper CreateNativeExceptionHelper()
         {
             Helpers.Assert(arch is not null);
@@ -544,42 +570,13 @@ namespace MonoMod.Core.Platforms.Systems
                 _ => throw new NotImplementedException($"No exception helper for current arch")
             };
 
-            // we want to get a temp file, write our helper to it, and load it
-            var templ = ArrayPool<byte>.Shared.Rent(NEHTempl.Length + 1);
-            int fd;
             string fname;
-            try
+            using (var embedded = Assembly.GetExecutingAssembly().GetManifestResourceStream(soname))
             {
-                templ.AsSpan().Clear();
-                NEHTempl.CopyTo(templ);
-
-                fixed (byte* pTmpl = templ)
-                    fd = MkSTemp(pTmpl);
-
-                if (fd == -1)
-                {
-                    var lastError = OSX.Errno;
-                    var ex = new Win32Exception(lastError);
-                    MMDbgLog.Error($"Could not create temp file for NativeExceptionHelper: {lastError} {ex}");
-                    throw ex;
-                }
-
-                fname = Encoding.UTF8.GetString(templ, 0, NEHTempl.Length);
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(templ);
-            }
-
-
-            using (var fh = new SafeFileHandle((IntPtr)fd, true))
-            using (var fs = new FileStream(fh, FileAccess.Write))
-            {
-                using var embedded = Assembly.GetExecutingAssembly().GetManifestResourceStream(soname);
                 Helpers.Assert(embedded is not null);
-
-                embedded.CopyTo(fs);
+                fname = MacOSNativeLibDrop.Instance.DropLibrary(embedded, NEHTempl);
             }
+
             return arch.Target is ArchitectureKind.Arm64
                 ? JitMemcpyHelper.CreateHelper(arch, fname)
                 : PosixExceptionHelper.CreateHelper(arch, fname);

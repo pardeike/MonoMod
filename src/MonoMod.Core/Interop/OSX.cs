@@ -20,9 +20,18 @@ namespace MonoMod.Core.Interop
         [DllImport(LibSystem, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mkstemp")]
         public static extern unsafe int MkSTemp(byte* template);
 
+        [DllImport(LibSystem, CallingConvention = CallingConvention.Cdecl, EntryPoint = "close")]
+        public static extern unsafe int Close(int fd);
+
         [DllImport(LibSystem, CallingConvention = CallingConvention.Cdecl, EntryPoint = "__error")]
         public static extern unsafe int* __error();
         public static unsafe int Errno => *__error();
+
+        static OSX()
+        {
+            // Preload pinvoke initialization so it doesn't affect errno when accessed the first time
+            _ = Errno;
+        }
 
         /*
         #ifdef  mig_external
