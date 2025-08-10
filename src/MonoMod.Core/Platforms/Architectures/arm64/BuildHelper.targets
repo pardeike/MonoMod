@@ -62,7 +62,7 @@
       <_ExeArgs Include="-target"/>
       <_ExeArgs Include="$(_Target)"/>
       <_ExeArgs Include="-fdiagnostics-format=msvc" />
-      <_ExeArgs Include="-v"/>
+      <!--<_ExeArgs Include="-v"/>-->
       <_ExeArgs Include="-c"/>
       <_ExeArgs Include="-o"/>
       <_ExeArgs Include="$(_Obj)"/>
@@ -106,7 +106,7 @@
       <_ExeArgs Include="-target"/>
       <_ExeArgs Include="$(_Target)"/>
       <_ExeArgs Include="-fdiagnostics-format=msvc" />
-      <_ExeArgs Include="-v"/>
+      <!--<_ExeArgs Include="-v"/>-->
       <_ExeArgs Include="-o"/>
       <_ExeArgs Include="$(_Out)"/>
       <_ExeArgs Include="$(_Obj)"/>
