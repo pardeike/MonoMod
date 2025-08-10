@@ -49,7 +49,7 @@ jobs:
       if: ${{ fromJSON(inputs.matrix).dotnet.isMono && fromJSON(inputs.matrix).os.runner == 'macos-13' }}
       with:
         key: ${{ fromJSON(inputs.matrix).os.runner }}-brew-v1
-        tools: llvm@20
+        tools: llvm@20 coreutils
     - name: Add new LLVM to PATH
       if: ${{ fromJSON(inputs.matrix).dotnet.isMono && fromJSON(inputs.matrix).os.runner == 'macos-13' }}
       shell: bash
