@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using MonoMod.Utils;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 #if NETCOREAPP1_0_OR_GREATER
 //using Xunit.Abstractions;
@@ -21,15 +22,20 @@ if (Debugger.IsAttached)
     Debugger.Break();
 }
 
-var str = "text".AsMemory();
+Console.WriteLine(HookSrc());
 
-using (new Hook(typeof(ReadOnlyMemory<char>).GetMethod("ToString")!, (ReadOnlyMemoryToString orig, ref ReadOnlyMemory<char> mem) =>
+using (new Hook(new Func<int>(HookSrc).Method, (Func<int> orig) =>
 {
-    return orig(ref mem) + " lol";
+    return orig() + 1;
 }))
 {
-    var str2 = str.ToString();
-    Console.WriteLine(str2);
+    Console.WriteLine(HookSrc());
+}
+
+[MethodImpl(MethodImplOptions.NoInlining)]
+static int HookSrc()
+{
+    return 1;
 }
 
 #if false
