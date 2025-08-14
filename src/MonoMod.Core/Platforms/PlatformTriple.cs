@@ -643,6 +643,16 @@ namespace MonoMod.Core.Platforms
             if (from is not MethodInfo fromInfo || to is not MethodInfo toInfo)
                 return to;
 
+            var returnBufferIsArgument = false;
+            foreach (var arg in Abi.ArgumentOrder.Span)
+            {
+                if (arg is SpecialArgumentKind.ReturnBuffer)
+                {
+                    returnBufferIsArgument = true;
+                    break;
+                }
+            }
+
             // Whenever we detour a call from an instance method to a static one, `this` needs to
             // change its position to morph into a simple argument. Otherwise, it will be swapped
             // with the return buffer, causing a spectacular failure on the callee side:
@@ -663,7 +673,7 @@ namespace MonoMod.Core.Platforms
             var returnType = fromInfo.ReturnType;
             var hasReturnBuffer = Abi.Classify(returnType, true) is TypeClassification.ByReference;
             var hasThis = !fromInfo.IsStatic;
-            var requiresReturnBufferFixup = hasThis && toInfo.IsStatic && hasReturnBuffer;
+            var requiresReturnBufferFixup = hasThis && toInfo.IsStatic && hasReturnBuffer && returnBufferIsArgument;
 
             // Whenever we detour a call from a generic method, depending on the ABI, we may
             // receive a generic context as an argument, which a callee never needs, at least
