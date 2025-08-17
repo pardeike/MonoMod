@@ -160,7 +160,8 @@ jobs:
 
   bump-ver:
     name: Bump versions
-    needs: [setup, build-testassets]
+    needs: [setup, build-testassets, test, upload-nuget]
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -185,6 +186,14 @@ jobs:
       uses: nike4613/install-dotnet@533307d1c90c37993c8ef1397388bc9783e7b87c
       with:
         global-json: global.json
+        
+    # we need to download the packages we just generated so that this subsequent restore doesn't fail PackageDownloading the new version
+    - name: Download compiled packages
+      uses: actions/download-artifact@v4
+      with:
+        name: packages
+        path: artifacts/package/release/
+        github-token: ${{ github.token }}
 
     # then, bump the version (if appropriate)
     - name: Update version
